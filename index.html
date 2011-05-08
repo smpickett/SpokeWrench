@@ -1,0 +1,306 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>Ride Tracking</title>
+
+<link rel="stylesheet" type="text/css" href="RideTracking.css">
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript">
+  var selected_rows = new Array()
+
+  $(document).ready(function(){
+      dataTable_PerformShading();
+
+    $('tr.Equipbike').toggle(this.checked);
+    $('tr.DataHrMonitor').toggle(this.checked);
+    $('tr.DataSpeedometer').toggle(this.checked);
+  
+    $('#equipbike').click(function() {
+      $('tr.Equipbike').toggle(this.checked);
+    });
+    $('#dataHrMonitor').click(function() {
+      $('tr.DataHrMonitor').toggle(this.checked);
+    });
+    $('#dataSpeedometer').click(function() { 
+      $('tr.DataSpeedometer').toggle(this.checked);
+    });
+
+    $('table.tabledata tr').click(function()
+    {
+      ToggleRowSelection($(this));
+    });
+  });
+
+  function ToggleRowSelection(row)
+  {
+    if($(row).attr('id') == 'rowHeader')
+      return;
+
+    if($(row).hasClass("table.tabledata selected"))
+    {
+      $(row).removeClass("table.tabledata selected");
+      for (i = 0; i < selected_rows.length; i++)
+        if(selected_rows[i] == row[0].rowIndex)
+          selected_rows.splice(i, 1);
+    }
+    else
+    {
+      $(row).addClass("table.tabledata selected");
+      selected_rows.push(parseInt(row[0].rowIndex));
+    }
+  }
+
+
+  function DeleteRows()
+  { 
+    if(selected_rows.length == 0)
+      alert("Please select ride(s) to delete");
+    else
+    {
+      $yes = confirm("Are you sure you want to delete the selected rides?");
+
+      if($yes)
+      {
+        selected_rows.sort(sortNumber);
+        do
+        {
+          var row = selected_rows.pop();
+          /* Call the PHP Delete function */
+          $.ajax({
+                type:'POST',
+                url: 'DeleteRide.php',
+                data: 'id='+RideIdentityFromRow(row)
+  //              success: function(data){ alert("OK"); },
+ //               error: function(data){ alert("Error"); },
+//                complete: function(data){ alert("Done"); }
+                });
+          
+          /* Hide, remove from row selection  */
+          HideSelectedRow(row);
+        }
+        while (selected_rows.length != 0)
+
+        dataTable_PerformShading();
+      }
+    }
+    
+    return false;
+  }
+
+  function CopyRows()
+  {
+    if(selected_rows.length == 0)
+      alert("Please select ride(s) to copy");
+    else
+    {
+      selected_rows.sort(sortNumber);
+      do
+      {
+        var row = selected_rows.pop();
+          $.ajax({
+                type:'POST',
+                url: 'CopyRide.php',
+                data: { id: RideIdentityFromRow(row), row: row },
+                dataType : 'json',
+                success: function(data)
+                {
+                  var oldRow = document.getElementById('tableDataMain').rows[data.row];
+                  var blankRow = document.getElementById('tableDataMain').insertRow(parseInt(data.row)+1);
+                  var newRow = oldRow.cloneNode(true);
+                  document.getElementById('tableDataMain').appendChild(newRow);
+                    document.getElementById('tableDataMain').firstChild.replaceChild(newRow, blankRow);
+
+                  var newRowChildren = $(newRow).children("td");
+                  for(var i=0; i<newRowChildren.length; i++)
+                    newRowChildren[i].style.display = 'none';
+
+                  newRow.cells(0).innerHTML = data.dataID;
+                  ShowHideTableRow(newRow, true, function(){dataTable_PerformShading();});
+                  newRow.onclick = function(){ToggleRowSelection($(this))};
+
+//                  $(newRow).removeClass("table.tabledata selected");
+//                  $(oldRow).removeClass("table.tabledata selected");
+                }
+//                error: function(data){ alert("Error"); },
+//                complete: function(jqXHR, textStatus)
+//                  {
+//                    alert("Complete:"+textStatus);
+//                  }
+          });
+      }
+      while (selected_rows.length != 0)
+
+      $('#tableDataMain tr').removeClass("table.tabledata selected");
+    }
+    return false;
+  }
+
+  function RefreshTable()
+  {
+    if (window.XMLHttpRequest)
+      {// code for IE7+, Firefox, Chrome, Opera, Safari
+      xmlhttp=new XMLHttpRequest();
+      }
+    else
+      {// code for IE6, IE5
+      xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+      }
+    xmlhttp.onreadystatechange=function()
+    {
+      if (xmlhttp.readyState==4 && xmlhttp.status==200)
+      {
+        var child = document.getElementById("tableDataMain");
+        child.parentNode.removeChild(child);
+        document.getElementById("div_tableData").innerHTML=xmlhttp.responseText;
+        $('table.tabledata tr').click(function() {ToggleRowSelection($(this));});
+        dataTable_PerformShading();
+      }
+    }
+    xmlhttp.open("GET","DrawTable.php",true);
+    xmlhttp.send();
+  
+    return false;
+  }
+
+  function HideSelectedRow(rowNum)
+  {
+    ShowHideTableRow(document.getElementById('tableDataMain').rows[rowNum], false, function(){dataTable_DeleteRow(rowNum);});
+  }
+
+  function RideIdentityFromRow(rowNum)
+  {
+    return document.getElementById('tableDataMain').rows[rowNum].cells[0].innerHTML;
+  }
+
+  function sortNumber(a,b)
+  {
+    return a - b;
+  }
+
+  function dataTable_PerformShading()
+  {
+    $('#tableDataMain tr:even').addClass('alt');
+    $('#tableDataMain tr:odd').removeClass('alt');
+  }
+
+  function dataTable_DeleteRow(rowNum)
+  {
+    document.getElementById('tableDataMain').deleteRow(rowNum);
+    dataTable_PerformShading();
+  }
+
+  function sortColumns(a, b)
+  {
+    return a.cellIndex - b.cellIndex
+  }
+
+
+function ShowHideTableRow(rowSelector, show, callback)
+{
+    var childCellsSelector = $(rowSelector).children("td");
+    var ubound = childCellsSelector.length - 1;
+    var lastCallback = null;
+
+    //childCellsSelector.sort(sortColumns); /* for some reason this is screwing up the callback... */ /* also, didnt fix the issue */
+    childCellsSelector.each(function(i)
+    {
+        // Only execute the callback on the last element.
+        if (ubound == i)
+          lastCallback = callback;
+
+        if(show && !$(this).hasClass('hidden'))
+          $(this).fadeIn(500, lastCallback);
+        else if(!show)
+        $(this).fadeOut(500, lastCallback);
+    });
+}
+
+</script>
+
+
+<script type="text/javascript">
+function AddRide(show)
+{
+  if(show && !AddRide.Shown)
+  {
+    var newCell=$('#MainRow')[0].insertCell(1);
+    newCell.innerHTML = "Test";
+    $(newCell).css('width','400px');
+    AddRide.Shown = true;
+  }
+  else if(!show)
+  {
+    $('#MainRow')[0].removeCell(1);
+  }
+}
+
+function AED_ToggleRow(checkbox)
+{
+  var rowId = "#" + checkbox.id + "_row";
+  if(checkbox.checked)
+    $(rowId).removeClass('dataEntryHidden');
+  else
+    $(rowId).addClass('dataEntryHidden');
+}
+
+
+
+
+</script>
+
+</head>
+
+
+
+
+
+<body>
+  
+
+<div>
+  <table id="table_MainLayout" border="1" width="100%" style="table-layout:fixed;">
+  <tr border="1" id="MainRow">
+  <td border="1" style="overflow:hidden;" width="*%">
+    <!-- GENERATE RIDE DISPLAY TABLE -->
+    <table class="icons">
+    <tr>
+    <td><form onSubmit="return RefreshTable();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Refresh.ico" width="18" height="18" /></form></td>
+    <td><img src="../resources/web-orange-buttons-by-axialis-team/ico/Plus.ico" width="18" height="18" onClick="AddRide(true);"></td>
+    <td><form onSubmit="return CopyRows();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Clipboard Copy.ico" width="18" height="18" /></form></td>
+    <td><form onSubmit="return DeleteRows();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Cancel.ico" width="18" height="18" /></form></td>
+    <td></td>
+    <td><form onSubmit="return SaveCSV();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Save.ico" width="18" height="18" /></form></td>
+    </tr>
+    </table>
+
+    <div id="div_tableData">
+        <?php include('DrawTable.php'); ?>
+    </div>
+    <!-- =========================== -->
+  </td>
+
+</tr>
+    </table>
+    <!-- =========================== -->
+  </td>
+  </tr>
+  </table>
+</div>
+
+
+<br>
+
+
+
+
+
+
+<br>
+
+
+</body>
+
+
+</html>
