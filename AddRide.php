@@ -9,7 +9,8 @@ $mysql_tbl  = "biketimes";
 $mysql_tbl_speedometer = "data_Speedometer";
 $mysql_tbl_heartmonitor = "data_HeartMonitor";
 $mysql_tbl_id = "dataId";
-  
+
+
   /* Connect to the MySQL DB */
 	$db = mysql_connect($mysql_host, $mysql_user, $mysql_pass);
 	if(!$db)
@@ -36,13 +37,11 @@ $mysql_tbl_id = "dataId";
 	    die('<br>Could not connect to MySQL db. Error:' . mysql_error());
     }
     $dataId_Speedometer = mysql_insert_id();
-    echo "<br>DEBUG: Adding new speedometer data OK";
   }
   else
   {
     $dataId_Speedometer = $row['dataId'];
   }
-  echo "<br>DEBUG: dataId= ".$dataId_Speedometer;
 
   /* HR Monitor */
   /* Find an existing ID */
@@ -63,9 +62,7 @@ $mysql_tbl_id = "dataId";
     {
 	    die('<br>Could not connect to MySQL db. Error:' . mysql_error());
     }
-    echo "<br>DEBUG: Adding new heartrate data OK";
     $dataId_Heartmonitor = mysql_insert_id();
-    echo "<br>DEBUG: Adding new speedometer data OK";
   }
   else
   {
@@ -81,10 +78,12 @@ $mysql_tbl_id = "dataId";
   {
     die('<br>Could not connect to MySQL db. Error:' . mysql_error());
   }
-  echo "<br>DEBUG: done";
 
   mysql_free_result($result);
   mysql_close($db);
- 
-  header('Location:http://localhost/v2.0/index.html');
+
+$return['error'] = false;
+$return['msg'] = 'test message';
+
+echo json_encode($return);
 ?>
