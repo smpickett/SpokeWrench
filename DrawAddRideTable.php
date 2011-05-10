@@ -10,7 +10,7 @@ function DrawAddRideTable()
   /* Draw the Add Ride table entry    */
   /* -------------------------------- */
   echo "<table class='addeditride'>";
-  echo "  <tr><th colspan='2'>Ride Entry</th></tr>";
+  echo "  <tr><th colspan='2' id='AddEditRideTitle'>Add Ride</th></tr>";
   /* --- Basic Data ----------------- */
   echo "  <tr><td colspan='2' class='dataHeader'>Basic Data</td></tr>";
   echo "  <tr><td>Date:</td><td class='dataEntry'><input type='text' id='date' size='18'/></td></tr>";
@@ -38,7 +38,10 @@ function DrawAddRideTable()
   echo "  <tr><td>Ave HR:</td><td class='dataEntry'><input type='text' id='HRM_avehr' size='3'/></td></tr>";
   echo "  <tr><td>Max HR:</td><td class='dataEntry'><input type='text' id='HRM_maxhr' size='3'/></td></tr>";
   /* --- Entry ---------------------- */
-  echo "  <tr><td colspan='2' class='dataheader'><input type='submit' value='Add'/></td></tr>";
+  echo "  <tr><td colspan='2' class='dataheader'>
+    <input type='button' value='Add' id='AddEditRideButton' onClick='Submit_AddRide();'/>
+    <input type='button' value='Cancel' id='AddEditCancelButton' onClick='AddEditCancel();'/>
+    </td></tr>";
 
   echo "</table>";
   echo "</form>";
