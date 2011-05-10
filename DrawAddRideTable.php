@@ -20,10 +20,10 @@ function DrawAddRideTable()
             <td>Type:</td>
             <td class='dataEntry'>
               <select id='type'>
-              <option value='commute'>Commute</option>
-              <option value='commute'>Training</option>
-              <option value='commute'>Race</option>
-              <option value='commute'>Leisure</option>
+              <option value='Commute'>Commute</option>
+              <option value='Training'>Training</option>
+              <option value='Race'>Race</option>
+              <option value='Leisure'>Leisure</option>
             </td>
           </tr>";
   /* --- Devices -------------------- */

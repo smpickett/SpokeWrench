@@ -1,9 +1,10 @@
 <?php
 
-$mysql_host = "localhost";
-$mysql_user = "bikedude";
-$mysql_pass = "sqlpass";
-$mysql_db   = 'WebDB_TEST';
+DeleteRide();
+
+function DeleteRide()
+{
+  require('SQLinfo.php');
 
   /* Connect to the MySQL DB */
 	$db = mysql_connect($mysql_host, $mysql_user, $mysql_pass);
@@ -18,6 +19,8 @@ $mysql_db   = 'WebDB_TEST';
   mysql_query("DELETE FROM biketimes WHERE rideID='".$_POST["id"]."'");
   mysql_close($db);
  
-  header('Location:http://localhost/v2.0/index.html');
+  /*header('Location:http://localhost/v2.0/index.html');*/
+
+}
 ?>
 

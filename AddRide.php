@@ -1,15 +1,10 @@
 <?php
 
-$mysql_host = "localhost";
-$mysql_user = "bikedude";
-$mysql_pass = "sqlpass";
-$mysql_db   = 'WebDB_TEST';
-$mysql_tbl  = "biketimes";
+AddRide();
 
-$mysql_tbl_speedometer = "data_Speedometer";
-$mysql_tbl_heartmonitor = "data_HeartMonitor";
-$mysql_tbl_id = "dataId";
-
+function AddRide()
+{
+  require('SQLinfo.php');
 
   /* Connect to the MySQL DB */
 	$db = mysql_connect($mysql_host, $mysql_user, $mysql_pass);
@@ -83,7 +78,9 @@ $mysql_tbl_id = "dataId";
   mysql_close($db);
 
 $return['error'] = false;
-$return['msg'] = 'test message';
+$return['msg'] = 'HRMid:'.$dataId_Heartmonitor.'  SPDid:'.$dataId_Speedometer;
 
 echo json_encode($return);
+
+}
 ?>

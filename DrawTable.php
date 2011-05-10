@@ -1,11 +1,20 @@
 <?php
+/*==============================================================*/
+/* File: DrawTable.php                                          */
+/* Copyright (c) 2011, Stephen Pickett                          */
+/*==============================================================*/
 
-$mysql_host = "localhost";
-$mysql_user = "bikedude";
-$mysql_pass = "sqlpass";
-$mysql_db   = 'WebDB_TEST';
-$mysql_tbl  = "biketimes";
+DrawTable();
 
+/*==============================================================*/
+/* FUNCTION:  DrawTable()                                       */
+/* PURPOSE:   Draws the HTML table                              */
+/* ARGUMENTS: boolean useTestDB - if TRUE, then uses the test   */
+/*            database                                          */
+/*==============================================================*/
+function DrawTable()
+{
+  require('SQLinfo.php');
 
 	/* Connect to the MySQL DB */
 	$db = mysql_connect($mysql_host, $mysql_user, $mysql_pass);
@@ -18,6 +27,7 @@ $mysql_tbl  = "biketimes";
 
   /* Draw Table with SQL data */
   echo '<table id="tableDataMain" class="tabledata">';
+  echo '<thead>';
   echo '<tr id="rowHeader">';
     echo '<th class="hidden"></th>';    /* Ride ID */
     echo '<th class="hidden"></th>';           /* Icon column */
@@ -41,7 +51,9 @@ $mysql_tbl  = "biketimes";
     echo '<th>Ave HR</th>';
     echo '<th>Max HR</th>';
   echo '</tr>';
+  echo '</thead>';
 
+    echo '<tbody class="scrollable">';
 	while($dataarray = mysql_fetch_array($data_route))
 	{
     echo '<tr>';
@@ -61,7 +73,7 @@ $mysql_tbl  = "biketimes";
 	  echo '<td>'.$dataarray['type'].'</td>';
 
     /* Get data from the speedometer and output */
-    $sqlstr = "SELECT * FROM `WebDB`.`data_Speedometer` WHERE dataId=".$dataarray['dataID_Speedometer'];
+    $sqlstr = "SELECT * FROM `".$mysql_db."`.`".$mysql_tbl_speedometer."` WHERE dataId=".$dataarray['dataID_Speedometer'];
     $result = mysql_query($sqlstr);
     $dataarray_data = mysql_fetch_array($result);
 	  echo '<td class="dataSeperation">'.$dataarray_data['time'].'</td>';
@@ -70,7 +82,7 @@ $mysql_tbl  = "biketimes";
     mysql_free_result($result);
 
     /* Get data from the heartratemonitor and output */
-    $sqlstr = "SELECT * FROM `WebDB`.`data_HeartMonitor` WHERE dataId=".$dataarray['dataID_Heartmonitor'];
+    $sqlstr = "SELECT * FROM `".$mysql_db."`.`".$mysql_tbl_heartmonitor."` WHERE dataId=".$dataarray['dataID_Heartmonitor'];
     $result = mysql_query($sqlstr);
     $dataarray_data = mysql_fetch_array($result);
 	  echo '<td class="dataSeperation">'.$dataarray_data['time'].'</td>';
@@ -80,11 +92,12 @@ $mysql_tbl  = "biketimes";
     mysql_free_result($result);
 
     echo '</tr>';
-	}
+  }
+  echo '</tbody>';
 
   echo '</table>';
 
 	mysql_free_result($data_route);
   mysql_close($db);
-
+}
 ?>

@@ -6,7 +6,7 @@
 
 <link rel="stylesheet" type="text/css" href="RideTracking.css">
 
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script type="text/javascript" src="jquery.min.js"></script>
 <script type="text/javascript">
   var selected_rows = new Array()
 
@@ -151,9 +151,17 @@
     {
       if (xmlhttp.readyState==4 && xmlhttp.status==200)
       {
+        // Remove the old table
         var child = document.getElementById("tableDataMain");
-        child.parentNode.removeChild(child);
-        document.getElementById("div_tableData").innerHTML=xmlhttp.responseText;
+        if(child != null)
+          child.parentNode.removeChild(child);
+
+        // Create a new table
+        var newcontent = document.createElement('div');
+        newcontent.innerHTML = xmlhttp.responseText;
+
+        // Add the new table
+        document.getElementById("div_tableData").appendChild(newcontent);
         $('table.tabledata tr').click(function() {ToggleRowSelection($(this));});
         dataTable_PerformShading();
       }
@@ -257,14 +265,8 @@ function AED_ToggleRow(checkbox)
 
 
 <body>
-  
-
-<div>
-  <table id="table_MainLayout" border="1" width="100%" style="table-layout:fixed;">
-  <tr border="1" id="MainRow">
-  <td border="1" style="overflow:hidden;" width="*%">
-    <!-- GENERATE RIDE DISPLAY TABLE -->
-    <table class="icons">
+  <div class="div_dataTable" id="div_tableData">
+    <table class="icons" id="table_icons">
     <tr>
     <td><form onSubmit="return RefreshTable();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Refresh.ico" width="18" height="18" /></form></td>
     <td><img src="../resources/web-orange-buttons-by-axialis-team/ico/Plus.ico" width="18" height="18" onClick="AddRide(true);"></td>
@@ -274,22 +276,45 @@ function AED_ToggleRow(checkbox)
     <td><form onSubmit="return SaveCSV();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Save.ico" width="18" height="18" /></form></td>
     </tr>
     </table>
+    <?php include('DrawTable.php'); ?>
+  </div>
 
-    <div id="div_tableData">
-        <?php include('DrawTable.php'); ?>
-    </div>
-    <!-- =========================== -->
-  </td>
+  <div class="div_addData">
+    <script type='text/javascript'>
+    function Submit_AddRide()
+    {
+      if($('input#date').val() == "")
+      {
+        alert("Please enter a date");
+        return false;
+      }
 
-</tr>
-    </table>
-    <!-- =========================== -->
-  </td>
-  </tr>
-  </table>
-</div>
+      $.ajax({
+        type: "POST",
+        dataType : 'json',
+        url: "AddRide.php",
+        data: {
+                date: $('input#date').val(),
+                time: $('input#time').val(),
+                route: $('input#route').val(),
+                category: $('select#type').val(),
+                DataSpeedometer_cadence: $('input#SPD_avecad').val(),
+                DataSpeedometer_time: $('input#SPD_time').val(),
+                DataSpeedometer_dist: $('input#SPD_dist').val(),
+                DataHrMonitor_avehr: $('input#HRM_avehr').val(),
+                DataHrMonitor_maxhr: $('input#HRM_avehr').val(),
+                DataHrMonitor_time: $('input#HRM_time').val(),
+                DataHrMonitor_calories: $('input#HRM_cals').val(),
+              },
+        success: function(data){RefreshTable();alert(data.msg);},
+        error: function(data){alert(data.responseText);}
+        });
 
-
+      return false;
+    }
+    </script>
+    <?php include('DrawAddRideTable.php'); ?>
+  </div>
 <br>
 
 
