@@ -13,27 +13,30 @@
   $(document).ready(function(){
       dataTable_PerformShading();
 
-    $('tr.Equipbike').toggle(this.checked);
-    $('tr.DataHrMonitor').toggle(this.checked);
-    $('tr.DataSpeedometer').toggle(this.checked);
-  
-    $('#equipbike').click(function() {
-      $('tr.Equipbike').toggle(this.checked);
-    });
-    $('#dataHrMonitor').click(function() {
-      $('tr.DataHrMonitor').toggle(this.checked);
-    });
-    $('#dataSpeedometer').click(function() { 
-      $('tr.DataSpeedometer').toggle(this.checked);
+    $('#EditSelectedRide').hover(function(){$(this).css('cursor', 'pointer');}, function(){$(this).css('cursor', 'auto');});
+
+    $('table.tabledata tr').click(function(event)
+    {
+      if(event.ctrlKey)
+      {
+        RowSelection_Toggle($(this));
+      }
+      else
+      {
+        RowSelection_Clear();
+        RowSelection_Toggle($(this));
+      }
     });
 
-    $('table.tabledata tr').click(function()
-    {
-      ToggleRowSelection($(this));
-    });
   });
 
-  function ToggleRowSelection(row)
+  function RowSelection_Clear()
+  {
+    $('#tableDataMain tr').removeClass("table.tabledata selected");
+    selected_rows.length = 0;
+  }  
+
+  function RowSelection_Toggle(row)
   {
     if($(row).attr('id') == 'rowHeader')
       return;
@@ -50,6 +53,16 @@
       $(row).addClass("table.tabledata selected");
       selected_rows.push(parseInt(row[0].rowIndex));
     }
+
+    if(selected_rows.length > 1)
+    {
+      $('#EditSelectedRide').unbind('mouseenter mouseleave');
+    }
+    else
+    {
+      $('#EditSelectedRide').hover(function(){$(this).css('cursor', 'pointer');}, function(){$(this).css('cursor', 'auto');});
+    }
+
   }
 
 
@@ -141,8 +154,8 @@
                   var oldRow = document.getElementById('tableDataMain').rows[data.row];
                   var blankRow = document.getElementById('tableDataMain').insertRow(parseInt(data.row)+1);
                   var newRow = oldRow.cloneNode(true);
-                  document.getElementById('tableDataMain').appendChild(newRow);
-                    document.getElementById('tableDataMain').firstChild.replaceChild(newRow, blankRow);
+                  document.getElementById('tableDataMain').children[1].replaceChild(newRow, blankRow);
+
 
                   var newRowChildren = $(newRow).children("td");
                   for(var i=0; i<newRowChildren.length; i++)
@@ -150,7 +163,7 @@
 
                   newRow.cells(0).innerHTML = data.dataID;
                   ShowHideTableRow(newRow, true, function(){dataTable_PerformShading();});
-                  newRow.onclick = function(){ToggleRowSelection($(this))};
+                  newRow.onclick = function(){RowSelection_Toggle($(this))};
 
 //                  $(newRow).removeClass("table.tabledata selected");
 //                  $(oldRow).removeClass("table.tabledata selected");
@@ -194,7 +207,7 @@
 
         // Add the new table to the HTML page
         document.getElementById("div_tableData").appendChild(newcontent);
-        $('table.tabledata tr').click(function() {ToggleRowSelection($(this));});
+        $('table.tabledata tr').click(function() {RowSelection_Toggle($(this));});
         dataTable_PerformShading();
       }
     }
@@ -301,7 +314,7 @@ function AED_ToggleRow(checkbox)
     <table class="icons" id="table_icons">
     <tr>
     <td><form onSubmit="return RefreshTable();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Refresh.ico" width="18" height="18" /></form></td>
-    <td><form onSubmit="return EditSelectedRide();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Write3.ico" width="18" height="18" /></td>
+    <td><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Write3.ico" width="18" height="18" id="EditSelectedRide" onClick="EditSelectedRide();" /></td>
     <td><form onSubmit="return CopyRows();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Clipboard Copy.ico" width="18" height="18" /></form></td>
     <td><form onSubmit="return DeleteRows();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Cancel.ico" width="18" height="18" /></form></td>
     <td></td>
