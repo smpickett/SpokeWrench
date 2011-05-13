@@ -16,79 +16,14 @@
 <script type="text/javascript"
     src="http://maps.google.com/maps/api/js?sensor=false">
 </script>
-  <script type="text/javascript">
+<script type="text/javascript" src="mapFunc.js"></script>
 
-var map;
-var directionsDisplay;
-var directionsService;
-var markerArray = [];
-    
-function initialize()
-{
-    // Instantiate a new directions service
-    directionsService = new google.maps.DirectionsService();
-
-    // Create a map and center it on Spring Bank airport
-    var latlng = new google.maps.LatLng(51.110204,-114.411621);
-    var mapOptions = {
-      zoom: 12,
-      center: latlng,
-      mapTypeId: google.maps.MapTypeId.ROADMAP
-    };
-    map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-
-    // Create a renderer for directions and bind it to the map
-    var rendererOptions = {
-        map: map
-    };
-    directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
-
-    // Instantiate an info whos
-}
-
-function calcRoute()
-{
-  // First, clear out all existing markerArrays
-  for (i = 0; i < markerArray.length; i++) {
-    markerArray[i].setMap(null);
-  }
-
-  // Retrieve the start and end locations and create
-  // a DirectionsRequest using BIKING directions
-  var start = "Springbank Airport";
-  var end = "Glenbow Lake";
-  var request = {
-      origin: start,
-      destination: end,
-      travelMode: google.maps.TravelMode.DRIVING
-  };
-
-  // Route the directions
-  directionsService.route(request, function(response, status)
-    {
-      if (status == google.maps.DirectionsStatus.OK)
-      {
-        directionsDisplay.setDirections(response);
-      }
-      else
-      {
-        alert("bad");
-      }
-    });
-}
-
-
-
-
-
-
-
-</script>
 </head>
 <body onload="initialize()">
 
   <div id="map_canvas" style="width:100%; height:100%"></div>
   <input type="button" onClick="calcRoute();" value="testing"/>
+  <input type="button" onClick="testMarkers();" value="testing2"/>
 
 </body>
 </html>
