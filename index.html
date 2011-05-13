@@ -10,36 +10,34 @@
 <script type="text/javascript">
   var selected_rows = new Array()
 
+
   $(document).ready(function(){
       dataTable_PerformShading();
-
-    $('#EditSelectedRide').hover(function(){$(this).css('cursor', 'pointer');}, function(){$(this).css('cursor', 'auto');});
-
-    $('table.tabledata tr').click(function(event)
-    {
-      if(event.ctrlKey)
-      {
-        RowSelection_Toggle($(this));
-      }
-      else
-      {
-        RowSelection_Clear();
-        RowSelection_Toggle($(this));
-      }
-    });
-
+      $('table.tabledata tr').click(function(event){RowSelection_Toggle($(this), event);});
   });
 
   function RowSelection_Clear()
   {
     $('#tableDataMain tr').removeClass("table.tabledata selected");
     selected_rows.length = 0;
+    $('#EditSelectedRide').unbind('mouseenter mouseleave click');
+    $('#EditSelectedRide').animate({opacity: 0.2}, 250);
+    $('#CopySelectedRide').unbind('mouseenter mouseleave click');
+    $('#CopySelectedRide').animate({opacity: 0.2}, 250);
+    $('#DeleteSelectedRide').unbind('mouseenter mouseleave click');
+    $('#DeleteSelectedRide').animate({opacity: 0.2}, 250);
   }  
 
-  function RowSelection_Toggle(row)
+  function RowSelection_Toggle(row, event)
   {
     if($(row).attr('id') == 'rowHeader')
       return;
+
+    if(!event.ctrlKey)
+    {
+      $('#tableDataMain tr').removeClass("table.tabledata selected");
+      selected_rows.length = 0;
+    }
 
     if($(row).hasClass("table.tabledata selected"))
     {
@@ -54,15 +52,35 @@
       selected_rows.push(parseInt(row[0].rowIndex));
     }
 
-    if(selected_rows.length > 1)
+    if(selected_rows.length == 0)
     {
-      $('#EditSelectedRide').unbind('mouseenter mouseleave');
+      $('#EditSelectedRide').unbind('mouseenter mouseleave click');
+      $('#EditSelectedRide').animate({opacity: 0.2}, 250);
+      $('#CopySelectedRide').unbind('mouseenter mouseleave click');
+      $('#CopySelectedRide').animate({opacity: 0.2}, 250);
+      $('#DeleteSelectedRide').unbind('mouseenter mouseleave click');
+      $('#DeleteSelectedRide').animate({opacity: 0.2}, 250);
+    }
+    else if (selected_rows.length == 1)
+    {
+      $('#EditSelectedRide').unbind('mouseenter mouseleave click');
+      $('#CopySelectedRide').unbind('mouseenter mouseleave click');
+      $('#DeleteSelectedRide').unbind('mouseenter mouseleave click');
+      $('#EditSelectedRide').hover(function(){$(this).css('cursor', 'pointer');}, function(){$(this).css('cursor', 'auto');});
+      $('#EditSelectedRide').click(function(){EditSelectedRide()});
+      $('#EditSelectedRide').animate({opacity: 1.0}, 250);
+      $('#CopySelectedRide').hover(function(){$(this).css('cursor', 'pointer');}, function(){$(this).css('cursor', 'auto');});
+      $('#CopySelectedRide').click(function(){CopyRows()});
+      $('#CopySelectedRide').animate({opacity: 1.0}, 250);
+      $('#DeleteSelectedRide').hover(function(){$(this).css('cursor', 'pointer');}, function(){$(this).css('cursor', 'auto');});
+      $('#DeleteSelectedRide').click(function(){DeleteRows()});
+      $('#DeleteSelectedRide').animate({opacity: 1.0}, 250);
     }
     else
     {
-      $('#EditSelectedRide').hover(function(){$(this).css('cursor', 'pointer');}, function(){$(this).css('cursor', 'auto');});
+      $('#EditSelectedRide').unbind('mouseenter mouseleave click');
+      $('#EditSelectedRide').animate({opacity: 0.2}, 250);
     }
-
   }
 
 
@@ -93,6 +111,15 @@
       $('th#AddEditRideTitle').text("Edit Ride");
     }
     return false;
+  }
+
+  function AddEditCancel()
+  {
+    $('input#AddEditRideButton').val('Add');
+    $('input#AddEditRideButton').removeAttr('onClick');
+    $('input#AddEditRideButton').unbind('click');
+    $('input#AddEditRideButton').bind('click', function(){Submit_AddRide();});
+    $('th#AddEditRideTitle').text("Add Ride");    
   }
 
 
@@ -127,6 +154,7 @@
         }
         while (selected_rows.length != 0)
 
+        RowSelection_Clear();
         dataTable_PerformShading();
       }
     }
@@ -163,7 +191,7 @@
 
                   newRow.cells(0).innerHTML = data.dataID;
                   ShowHideTableRow(newRow, true, function(){dataTable_PerformShading();});
-                  newRow.onclick = function(){RowSelection_Toggle($(this))};
+                  newRow.onclick = function(event){RowSelection_Toggle($(this), event)};
 
 //                  $(newRow).removeClass("table.tabledata selected");
 //                  $(oldRow).removeClass("table.tabledata selected");
@@ -177,7 +205,7 @@
       }
       while (selected_rows.length != 0)
 
-      $('#tableDataMain tr').removeClass("table.tabledata selected");
+      RowSelection_Clear();
     }
     return false;
   }
@@ -196,6 +224,8 @@
     {
       if (xmlhttp.readyState==4 && xmlhttp.status==200)
       {
+        RowSelection_Clear();
+
         // Remove the old table
         var child = document.getElementById("tableDataMain");
         if(child != null)
@@ -207,7 +237,7 @@
 
         // Add the new table to the HTML page
         document.getElementById("div_tableData").appendChild(newcontent);
-        $('table.tabledata tr').click(function() {RowSelection_Toggle($(this));});
+        $('table.tabledata tr').click(function(event) {RowSelection_Toggle($(this), event);});
         dataTable_PerformShading();
       }
     }
@@ -272,37 +302,6 @@ function ShowHideTableRow(rowSelector, show, callback)
 
 </script>
 
-
-<script type="text/javascript">
-function AddRide(show)
-{
-  if(show && !AddRide.Shown)
-  {
-    var newCell=$('#MainRow')[0].insertCell(1);
-    newCell.innerHTML = "Test";
-    $(newCell).css('width','400px');
-    AddRide.Shown = true;
-  }
-  else if(!show)
-  {
-    $('#MainRow')[0].removeCell(1);
-  }
-}
-
-function AED_ToggleRow(checkbox)
-{
-  var rowId = "#" + checkbox.id + "_row";
-  if(checkbox.checked)
-    $(rowId).removeClass('dataEntryHidden');
-  else
-    $(rowId).addClass('dataEntryHidden');
-}
-
-
-
-
-</script>
-
 </head>
 
 
@@ -314,9 +313,9 @@ function AED_ToggleRow(checkbox)
     <table class="icons" id="table_icons">
     <tr>
     <td><form onSubmit="return RefreshTable();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Refresh.ico" width="18" height="18" /></form></td>
-    <td><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Write3.ico" width="18" height="18" id="EditSelectedRide" onClick="EditSelectedRide();" /></td>
-    <td><form onSubmit="return CopyRows();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Clipboard Copy.ico" width="18" height="18" /></form></td>
-    <td><form onSubmit="return DeleteRows();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Cancel.ico" width="18" height="18" /></form></td>
+    <td><img class='opaque' type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Write3.ico" width="18" height="18" id="EditSelectedRide"></td>
+    <td><img class='opaque' type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Clipboard Copy.ico" width="18" height="18" id="CopySelectedRide"></form></td>
+    <td><img class='opaque' type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Cancel.ico" width="18" height="18" id="DeleteSelectedRide"></form></td>
     <td></td>
     <td><form onSubmit="return SaveCSV();"><input type="image" src="../resources/web-orange-buttons-by-axialis-team/ico/Save.ico" width="18" height="18" /></form></td>
     </tr>
@@ -328,7 +327,6 @@ function AED_ToggleRow(checkbox)
     <script type='text/javascript'>
     function Submit_EditRide(rideId)
     {
-      alert(rideId);
       $('input#AddEditRideButton').val('Add');
       $('input#AddEditRideButton').unbind('click');
       $('input#AddEditRideButton').bind('click', function(){Submit_AddRide();});

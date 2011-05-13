@@ -40,7 +40,7 @@ function DrawAddRideTable()
   /* --- Entry ---------------------- */
   echo "  <tr><td colspan='2' class='dataheader'>
     <input type='button' value='Add' id='AddEditRideButton' onClick='Submit_AddRide();'/>
-    <input type='button' value='Cancel' id='AddEditCancelButton' onClick='AddEditCancel();'/>
+    <input type='reset' value='Cancel' id='AddEditCancelButton' onClick='AddEditCancel();'/>
     </td></tr>";
 
   echo "</table>";

@@ -179,3 +179,9 @@ div.div_addData
 {
   padding-top:28px;
 }
+
+img.opaque
+{
+  opacity:0.2;
+  filter:alpha(opacity=20);
+}
