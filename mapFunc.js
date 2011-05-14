@@ -117,7 +117,52 @@ function testMarkers()
     }
 }
 
-function putMarkerEveryKm(dist)
+function putMarkerEveryKm(stepDist)
 {
-    // Generate code to put a marker every km
+    var steps = directionsDisplay.directions.routes[0].legs[0].steps;
+    var i,j;
+    var pointArrIa = new Array();
+    var pointArrJa = new Array();
+    var pointArr = new Array();
+
+    for(i = 0; i < steps.length; i++)
+    {
+      var points = steps[i].lat_lngs;
+      for(j = 0; j < points.length; j++)
+      {
+        pointArr.push(new LatLon(points[j].Ia, points[j].Ja));
+      }
+    }
+
+    var ovrDist = 0;
+    var markerCnt = 0;
+    for(i = 1; i < pointArr.length; i++)
+    {
+      var ppDist = parseFloat(pointArr[i].distanceTo(pointArr[i-1]));
+      var ppBearing = pointArr[i].bearingTo(pointArr[i-1]);
+      if(ovrDist + ppDist >= stepDist)
+      {
+        var lastPos = pointArr[i-1];
+        do
+        {
+          var markerPos = lastPos.destinationPoint(ppBearing, -Math.abs(stepDist-ovrDist));
+          var markerPosGM = new google.maps.LatLng(markerPos.lat(), markerPos.lon());
+          markerCnt++;
+          var markerGM = new google.maps.Marker({
+                  position: markerPosGM,
+                  map: map,
+                  title: markerCnt * stepDist + " km"
+              });
+          ppDist = ppDist - (stepDist - ovrDist);
+          lastPos = markerPos;
+          ovrDist = 0;
+        } while(ppDist > stepDist)
+        ovrDist = ppDist;
+      }
+      else
+      {
+        ovrDist += ppDist;
+      }
+    }
 }
+
