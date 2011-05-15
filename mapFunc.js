@@ -117,6 +117,12 @@ function testMarkers()
     }
 }
 
+/*======================================================================
+ * Description: This function will put a marker at the interval 
+ *              specified by 'stepDist'. There must already be a route
+ *              loaded onto the map.
+ * Arguments:   stepDist - distance, specified in km
+ *======================================================================*/
 function putMarkerEveryKm(stepDist)
 {
     var steps = directionsDisplay.directions.routes[0].legs[0].steps;
@@ -136,6 +142,7 @@ function putMarkerEveryKm(stepDist)
 
     var ovrDist = 0;
     var markerCnt = 0;
+var wind = 0;
     for(i = 1; i < pointArr.length; i++)
     {
       var ppDist = parseFloat(pointArr[i].distanceTo(pointArr[i-1]));
@@ -148,14 +155,18 @@ function putMarkerEveryKm(stepDist)
           var markerPos = lastPos.destinationPoint(ppBearing, -Math.abs(stepDist-ovrDist));
           var markerPosGM = new google.maps.LatLng(markerPos.lat(), markerPos.lon());
           markerCnt++;
-          var markerGM = new google.maps.Marker({
+/*
+   var markerGM = new google.maps.Marker({
                   position: markerPosGM,
                   map: map,
                   title: markerCnt * stepDist + " km"
               });
+*/
+          drawArrow(markerPos, wind); /* Draw an arrow too! */
           ppDist = ppDist - (stepDist - ovrDist);
           lastPos = markerPos;
           ovrDist = 0;
+wind += 10;
         } while(ppDist > stepDist)
         ovrDist = ppDist;
       }
@@ -166,3 +177,32 @@ function putMarkerEveryKm(stepDist)
     }
 }
 
+/*======================================================================
+ * Description: This function will draw an arrow at the indicated 
+ *              location, pointing in the specified direction.
+ * Arguments:   loc  - LatLon object
+ *              bear - bearing, in degrees
+ *======================================================================*/
+function drawArrow(loc, bear)
+{
+  var point1 = loc;
+  var point2 = loc.destinationPoint(bear + 135, 0.02);
+  var point3 = loc.destinationPoint(bear - 135, 0.02);
+  var point4 = loc.destinationPoint(bear + 180, 0.07);
+
+  var arrow = new Array();
+  arrow.push(new google.maps.LatLng(point2.lat(), point2.lon()));
+  arrow.push(new google.maps.LatLng(point1.lat(), point1.lon()));
+  arrow.push(new google.maps.LatLng(point4.lat(), point4.lon()));
+  arrow.push(new google.maps.LatLng(point1.lat(), point1.lon()));
+  arrow.push(new google.maps.LatLng(point3.lat(), point3.lon()));
+
+  var flightPath = new google.maps.Polyline({
+    path: arrow,
+    strokeColor: "#FF0000",
+    strokeOpacity: 0.4,
+    strokeWeight: 2
+  });
+
+  flightPath.setMap(map);
+}
