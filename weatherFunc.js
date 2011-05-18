@@ -1,7 +1,13 @@
 /*======================================================*/
-/* FILE: mapFunc.js                                     */
+/* FILE: weatherFunc.js                                 */
 /* Copyright (c) 2011 SpokeWrench                       */
 /*======================================================*/
+var
+
+
+
+
+
 
 
 var map;
@@ -136,7 +142,7 @@ function putMarkerEveryKm(stepDist)
       var points = steps[i].lat_lngs;
       for(j = 0; j < points.length; j++)
       {
-        pointArr.push(new LatLon(points[j].Ja, points[j].Ka));
+        pointArr.push(new LatLon(points[j].Ia, points[j].Ja));
       }
     }
 
