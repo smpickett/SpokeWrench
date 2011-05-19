@@ -206,3 +206,74 @@ function drawArrow(loc, bear)
 
   flightPath.setMap(map);
 }
+
+/*======================================================================
+ * Description: This function will draw an arrow at the indicated 
+ *              location, pointing in the specified direction.
+ * Arguments:   loc  - LatLon object
+ *              bear - bearing, in degrees
+ *======================================================================*/
+function plotRoute(file)
+{
+    $.ajax({
+        url: './Routes/test.tcx',
+        type: 'HEAD',
+        error: function()
+            {
+                alert("error");
+            },
+        success: function()
+            {
+                alert("OK");
+            }
+    });
+
+    var http = new XMLHttpRequest();
+    http.open('HEAD', './Routes/test.tcx', false);
+    http.send();
+    if(http.status!=404)
+        alert("OK2");
+    else
+        alert("error2");
+    
+    
+    $.ajax({
+        type:'GET',
+        url: './Routes/test.tcx',
+        dataType : 'xml',
+        success: generateRouteOverlay,
+        error: function(xmlResp, message, error)
+            {
+                alert(message + "   " + error.message);
+            }
+        });
+}
+
+var route = new array();
+var routeTimes = new array();
+function generateRouteOverlay(xml)
+{
+    $(xml).find("Lap").each(function()
+    {
+        $(this).find("Track").each(function()
+        {
+            $(this).find("Trackpoint").each(function()
+            {
+                var lat = $(this).find("Position").find("LatitudeDegrees").text();
+                var lon = $(this).find("Position").find("longitudeDegrees").text();
+                var time = $(this).find("Time").text();
+                route.push(new google.maps.LatLng(lat, lon));
+                routeTimes.push(time);
+            });
+        });
+    });
+
+    var flightPath = new google.maps.Polyline({
+        path: route,
+        strokeColor: "#00FF00",
+        strokeOpacity: 0.8,
+        strokeWeight: 2
+    });
+    flightPath.setMap(map);
+}
+
