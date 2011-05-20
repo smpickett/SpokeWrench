@@ -162,7 +162,7 @@ var wind = 0;
                   title: markerCnt * stepDist + " km"
               });
 */
-          drawArrow(markerPos, wind); /* Draw an arrow too! */
+          drawArrow_Wind(markerPos, wind); /* Draw an arrow too! */
           ppDist = ppDist - (stepDist - ovrDist);
           lastPos = markerPos;
           ovrDist = 0;
@@ -183,29 +183,55 @@ wind += 10;
  * Arguments:   loc  - LatLon object
  *              bear - bearing, in degrees
  *======================================================================*/
-function drawArrow(loc, bear)
+function drawArrow_Wind(loc, bear, mag)
 {
-  var point1 = loc;
-  var point2 = loc.destinationPoint(bear + 135, 0.02);
-  var point3 = loc.destinationPoint(bear - 135, 0.02);
-  var point4 = loc.destinationPoint(bear + 180, 0.07);
+  var l = 0.10*mag; // arrow length
+  var w = 0.05*mag/2;     // arrow width
+  var c = 0.10*mag;     // arrow center
+  var tip   = loc.destinationPoint(bear      , c);
+  var right = tip.destinationPoint(bear + 135, w);
+  var left  = tip.destinationPoint(bear - 135, w);
+  var back  = tip.destinationPoint(bear + 180, l);
 
   var arrow = new Array();
-  arrow.push(new google.maps.LatLng(point2.lat(), point2.lon()));
-  arrow.push(new google.maps.LatLng(point1.lat(), point1.lon()));
-  arrow.push(new google.maps.LatLng(point4.lat(), point4.lon()));
-  arrow.push(new google.maps.LatLng(point1.lat(), point1.lon()));
-  arrow.push(new google.maps.LatLng(point3.lat(), point3.lon()));
+  arrow.push(new google.maps.LatLng(right.lat(), right.lon()));
+  arrow.push(new google.maps.LatLng(tip.lat()  , tip.lon())  );
+  arrow.push(new google.maps.LatLng(back.lat() , back.lon()) );
+  arrow.push(new google.maps.LatLng(tip.lat()  , tip.lon())  );
+  arrow.push(new google.maps.LatLng(left.lat() , left.lon()) );
 
   var flightPath = new google.maps.Polyline({
     path: arrow,
     strokeColor: "#FF0000",
-    strokeOpacity: 0.4,
-    strokeWeight: 2
+    strokeOpacity: 0.8,
+    strokeWeight: 1
   });
-
   flightPath.setMap(map);
 }
+function drawArrow_Dir(loc, bear)
+{
+  var l = 0.1; // arrow length
+  var w = 0.1; // arrow width
+  var c = 0;    // arrow center
+  var tip   = loc.destinationPoint(bear      , c);
+  var right = tip.destinationPoint(bear + 135, w);
+  var left  = tip.destinationPoint(bear - 135, w);
+
+  var arrow = new Array();
+  arrow.push(new google.maps.LatLng(right.lat(), right.lon()));
+  arrow.push(new google.maps.LatLng(tip.lat()  , tip.lon())  );
+  arrow.push(new google.maps.LatLng(left.lat() , left.lon()) );
+
+  var flightPath = new google.maps.Polyline({
+    path: arrow,
+    strokeColor: "#0000FF",
+    strokeOpacity: 1,
+    strokeWeight: 3
+  });
+  flightPath.setMap(map);
+}
+
+
 
 /*======================================================================
  * Description: This function will draw an arrow at the indicated 
@@ -216,7 +242,7 @@ function drawArrow(loc, bear)
 function plotRoute(file)
 {
     $.ajax({
-        url: './Routes/test.tcx',
+        url: file,
         type: 'HEAD',
         error: function()
             {
@@ -224,22 +250,26 @@ function plotRoute(file)
             },
         success: function()
             {
-                alert("OK");
+                //alert("OK");
             }
     });
 
     var http = new XMLHttpRequest();
-    http.open('HEAD', './Routes/test.tcx', false);
+    http.open('HEAD', file, false);
     http.send();
     if(http.status!=404)
-        alert("OK2");
+    {
+        //alert("OK2");
+    }
     else
+    {
         alert("error2");
+    }
     
     
     $.ajax({
         type:'GET',
-        url: './Routes/test.tcx',
+        url: file,
         dataType : 'xml',
         success: generateRouteOverlay,
         error: function(xmlResp, message, error)
@@ -249,31 +279,308 @@ function plotRoute(file)
         });
 }
 
-var route = new array();
-var routeTimes = new array();
+var route = new Array();
+var routeTimes = new Array();
+var windData = new Array();
 function generateRouteOverlay(xml)
 {
-    $(xml).find("Lap").each(function()
-    {
-        $(this).find("Track").each(function()
+  route.length=0;
+  routeTimes.length=0;
+  var bounds = new google.maps.LatLngBounds();
+  
+  $(xml).find("TrainingCenterDatabase").find("Activities").find("Activity").find("Lap").find("Track").find("Trackpoint").each(function()
         {
-            $(this).find("Trackpoint").each(function()
-            {
                 var lat = $(this).find("Position").find("LatitudeDegrees").text();
-                var lon = $(this).find("Position").find("longitudeDegrees").text();
+                var lon = $(this).find("Position").find("LongitudeDegrees").text();
                 var time = $(this).find("Time").text();
-                route.push(new google.maps.LatLng(lat, lon));
-                routeTimes.push(time);
-            });
+                if(lat!="" && lon!="")
+                {
+                  route.push(new google.maps.LatLng(lat, lon));
+                  bounds.extend(route[route.length-1]);
+                  routeTimes.push(XMLTimeStampToDate(time));
+                }
         });
-    });
 
     var flightPath = new google.maps.Polyline({
         path: route,
-        strokeColor: "#00FF00",
+        strokeColor: "#0000FF",
         strokeOpacity: 0.8,
-        strokeWeight: 2
+        strokeWeight: 3
     });
     flightPath.setMap(map);
+    map.fitBounds(bounds);
 }
 
+function XMLTimeStampToDate(xmlDate)
+{
+    var dt = new Date();
+    var dtS = xmlDate.slice(xmlDate.indexOf('T')+1, xmlDate.indexOf('.'))
+    var TimeArray = dtS.split(":");
+    dt.setUTCHours(TimeArray[0],TimeArray[1],TimeArray[2]);
+    dtS = xmlDate.slice(0, xmlDate.indexOf('T'))
+    TimeArray = dtS.split("-");
+    dt.setUTCFullYear(TimeArray[0],TimeArray[1],TimeArray[2]);
+    return dt;
+}
+
+function CSVTimeStampToDate(csvDate)
+{
+  return new Date(Date.parse(csvDate));
+}
+
+function putMarkerEveryKmRoute(stepDist, isWind)
+{
+    var i,j;
+    var pointArrIa = new Array();
+    var pointArrJa = new Array();
+    var pointArr = new Array();
+
+    for(i = 0; i < route.length; i++)
+    {
+        pointArr.push(new LatLon(route[i].Ja, route[i].Ka));
+    }
+
+    var ovrDist = 0;
+    var markerCnt = 0;
+var wind = 0;
+    for(i = 1; i < pointArr.length; i++)
+    {
+      var ppDist = parseFloat(pointArr[i].distanceTo(pointArr[i-1]));
+      var ppBearing = pointArr[i].bearingTo(pointArr[i-1]);
+      if(ovrDist + ppDist >= stepDist)
+      {
+        var lastPos = pointArr[i-1];
+        do
+        {
+          var markerPos = lastPos.destinationPoint(ppBearing, -Math.abs(stepDist-ovrDist));
+          var markerPosGM = new google.maps.LatLng(markerPos.lat(), markerPos.lon());
+          markerCnt++;
+          if(isWind)
+          {
+            drawArrow_Wind(markerPos, wind); /* Draw an arrow too! */
+          }
+          else
+          {
+            drawArrow_Dir(markerPos, lastPos.bearingTo(markerPos));
+          }
+          ppDist = ppDist - (stepDist - ovrDist);
+          lastPos = markerPos;
+          ovrDist = 0;
+wind += 1;
+        } while(ppDist > stepDist)
+        ovrDist = ppDist;
+      }
+      else
+      {
+        ovrDist += ppDist;
+      }
+    }
+}
+
+
+/*=============================================*/
+
+function putRealWindMarkers(stepDist)
+{
+  // First, add the direction marker
+  putMarkerEveryKmRoute(2.0, false);
+
+  windData.length = 0;
+  // Then, download the WIND data
+  $.ajax({
+      type:'POST',
+      url: 'WeatherFunctions_Test.php',
+      data: { ID: "IABCALGA14", day: routeTimes[0].getDate(), month: routeTimes[0].getMonth()+1, year: routeTimes[0].getYear()-100+2000 },
+      dataType : 'json',
+      success: function(data)
+      {
+        var colTime=0;
+        var colWindDir=5;
+        var colWindMag=6;
+        for(var i=0; i<data.wudata.length; i++)
+        {
+          windData.push(new Array(CSVTimeStampToDate(data.wudata[i][colTime]), parseInt(data.wudata[i][colWindDir]), parseInt(data.wudata[i][colWindMag])));
+        }
+
+        putWindMarkerEveryKmRoute(0.2);
+      },
+      error: function(data){ alert("Error"); },
+      complete: function(jqXHR, textStatus)
+        {
+          //alert("Complete:"+textStatus);
+        }
+  });
+}
+
+function putWindMarkerEveryKmRoute(stepDist)
+{
+    var i,j;
+    var pointArrIa = new Array();
+    var pointArrJa = new Array();
+    var pointArr = new Array();
+
+    for(i = 0; i < route.length; i++)
+    {
+        pointArr.push(new LatLon(route[i].Ja, route[i].Ka));
+    }
+
+    var ovrDist = 0;
+    var markerCnt = 0;
+    for(i = 1; i < pointArr.length; i++)
+    {
+      var ppDist = parseFloat(pointArr[i].distanceTo(pointArr[i-1]));
+      var ppBearing = pointArr[i].bearingTo(pointArr[i-1]);
+      if(ovrDist + ppDist >= stepDist)
+      {
+        var lastPos = pointArr[i-1];
+        do
+        {
+          var markerPos = lastPos.destinationPoint(ppBearing, -Math.abs(stepDist-ovrDist));
+          var markerPosGM = new google.maps.LatLng(markerPos.lat(), markerPos.lon());
+          markerCnt++;
+
+          // Find the nearest weather timestamp, and get the direction (in degrees)
+          var windIndex = findNearestTime(routeTimes[i].getTime()/*-2678390837*//*-4560000*/, windData);
+          var windDir = windData[windIndex][1];
+          var windMag = windData[windIndex][2];
+
+          // Draw a wind arrow with coordinates of 'markerPos' and
+          // wind direction of 'windDir'
+          drawArrow_Wind(markerPos, windDir, windMag);
+
+          ppDist = ppDist - (stepDist - ovrDist);
+          lastPos = markerPos;
+          ovrDist = 0;
+        } while(ppDist > stepDist)
+        ovrDist = ppDist;
+      }
+      else
+      {
+        ovrDist += ppDist;
+      }
+    }
+}
+
+function findNearestTime(value, array)
+{
+  var nearest = -1;
+  var bestDistanceFoundYet = 99999999999999999;
+  // We iterate on the array...
+  for (var i = 0; i < array.length; i++)
+  {
+    // if we found the desired number, we return it.
+    if (array[i][0].getTime() == value)
+    {
+      return i;
+    }
+    else 
+    {
+      // else, we consider the difference between the desired number and the current number in the array.
+      var d = Math.abs(value - array[i][0].getTime());
+      if (d < bestDistanceFoundYet)
+      {
+        // For the moment, this value is the nearest to the desired number...
+        nearest = i;
+        bestDistanceFoundYet = d;
+      }
+    }
+  }
+  return nearest;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+// This will parse a delimited string into an array of
+// arrays. The default delimiter is the comma, but this
+// can be overriden in the second argument.
+function CSVToArray( strData, strDelimiter ){
+    // Check to see if the delimiter is defined. If not,
+    // then default to comma.
+    strDelimiter = (strDelimiter || ",");
+
+    // Create a regular expression to parse the CSV values.
+    var objPattern = new RegExp(
+            (
+                    // Delimiters.
+                    "(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
+
+                    // Quoted fields.
+                    "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
+
+                    // Standard fields.
+                    "([^\"\\" + strDelimiter + "\\r\\n]*))"
+            ),
+            "gi"
+            );
+
+
+    // Create an array to hold our data. Give the array
+    // a default empty first row.
+    var arrData = [[]];
+
+    // Create an array to hold our individual pattern
+    // matching groups.
+    var arrMatches = null;
+
+
+    // Keep looping over the regular expression matches
+    // until we can no longer find a match.
+    while (arrMatches = objPattern.exec( strData )){
+
+            // Get the delimiter that was found.
+            var strMatchedDelimiter = arrMatches[ 1 ];
+
+            // Check to see if the given delimiter has a length
+            // (is not the start of string) and if it matches
+            // field delimiter. If id does not, then we know
+            // that this delimiter is a row delimiter.
+            if (
+                    strMatchedDelimiter.length &&
+                    (strMatchedDelimiter != strDelimiter)
+                    ){
+
+                    // Since we have reached a new row of data,
+                    // add an empty row to our data array.
+                    arrData.push( [] );
+
+            }
+
+
+            // Now that we have our delimiter out of the way,
+            // let's check to see which kind of value we
+            // captured (quoted or unquoted).
+            if (arrMatches[ 2 ]){
+
+                    // We found a quoted value. When we capture
+                    // this value, unescape any double quotes.
+                    var strMatchedValue = arrMatches[ 2 ].replace(
+                            new RegExp( "\"\"", "g" ),
+                            "\""
+                            );
+
+            } else {
+
+                    // We found a non-quoted value.
+                    var strMatchedValue = arrMatches[ 3 ];
+
+            }
+
+
+            // Now that we have our value string, let's add
+            // it to the data array.
+            arrData[ arrData.length - 1 ].push( strMatchedValue );
+    }
+
+    // Return the parsed data.
+    return( arrData );
+}

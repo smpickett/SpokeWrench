@@ -29,11 +29,26 @@
 
   <br>
 
-  <?php include('WeatherFunctions.php'); ?>
+  <?php include('WeatherFunctions.php') ?>
 
   <br>
 
-  <input type="button" onClick="plotRoute('nada');" value="Plot TRX Route" />
+  <input type="button" onClick="plotRoute('./Routes/5_17_2011 7_18_50 AM_history.tcx');" value="Plot TRX Route" />
+  <input type="button" onClick="putRealWindMarkers(0.2);" value="Add REAL Wind" />
+
+  <br>
+
+  <input type="button" onClick="plotRoute('./Routes/5_16_2011 12_07_12 PM_history.tcx');" value="Plot TRX Route 2" />
+  <input type="button" onClick="putRealWindMarkers(0.2);" value="Add REAL Wind 2" />
+
+  <br>
+
+  <input type="button" onClick="plotRoute('./Routes/2010_06_23_Big_Springs_Loop (edited).tcx');" value="Plot TRX Route 3" />
+  <input type="button" onClick="putRealWindMarkers(0.2);" value="Add REAL Wind 3" />
+
+  <br><br>
+
+    
 
 </body>
 </html>
