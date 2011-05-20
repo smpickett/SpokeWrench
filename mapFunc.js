@@ -4,63 +4,33 @@
 /*======================================================*/
 
 
-var map;
-var directionsDisplay;
-var directionsService;
-var markerArray = [];
+//====== Settings =========================================================
+var colourArrowWind = "#00FF00";
+var colourArrowDir  = "#0000FF";
+var colourPolyLineRoute = "#0000FF";
+//====== END OF Settings ==================================================
     
-function initialize()
+
+//====== Global Variables =================================================
+var map;
+var route;          // Contains Google Maps lat lon coordinate sets
+var routeTimes      // Contains Date objects
+var windData;       // Contains WindInfo objects
+//====== END OF Global Variables ==========================================
+
+function initializeMap()
 {
     // Instantiate a new directions service
     directionsService = new google.maps.DirectionsService();
 
-    // Create a map and center it on Spring Bank airport
-    var latlng = new google.maps.LatLng(51.110204,-114.411621);
+    // Create a map and center it on Calgary, AB
+    var latlng = new google.maps.LatLng(51.045,-114.057222);
     var mapOptions = {
       zoom: 12,
       center: latlng,
       mapTypeId: google.maps.MapTypeId.ROADMAP
     };
     map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-
-    // Create a renderer for directions and bind it to the map
-    var rendererOptions = {
-        map: map
-    };
-    directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
-
-    // Instantiate an info whos
-}
-
-function calcRoute()
-{
-  // First, clear out all existing markerArrays
-  for (i = 0; i < markerArray.length; i++) {
-    markerArray[i].setMap(null);
-  }
-
-  // Retrieve the start and end locations and create
-  // a DirectionsRequest using BIKING directions
-  var start = "Springbank Airport";
-  var end = "Glenbow Lake";
-  var request = {
-      origin: start,
-      destination: end,
-      travelMode: google.maps.TravelMode.DRIVING
-  };
-
-  // Route the directions
-  directionsService.route(request, function(response, status)
-    {
-      if (status == google.maps.DirectionsStatus.OK)
-      {
-        directionsDisplay.setDirections(response);
-      }
-      else
-      {
-        alert("bad");
-      }
-    });
 }
 
 
@@ -83,40 +53,72 @@ WindInfo.prototype.getInfo = function()
 };
 
 
-function OverlayWind()
+//====== Overlay Functions ================================================
+/*----------------------------------------------------------------------
+ * Description: This function will draw an arrow at the indicated 
+ *              location, pointing in the specified direction.
+ * Arguments:   loc  - LatLon object
+ *              bear - bearing, in degrees
+ *              mag  - size/magnitude of arrow
+ *----------------------------------------------------------------------*/
+function drawArrow_Wind(loc, bear, mag)
 {
-    var wind = new WindInfo();
-    wind.add(1, 2, 3);
-    alert(wind.getInfo());
+  var l = 0.10*mag;     // arrow length
+  var w = 0.05*mag/2;   // arrow width
+  var c = 0.10*mag;     // arrow center
+  var tip   = loc.destinationPoint(bear      , c);
+  var right = tip.destinationPoint(bear + 135, w);
+  var left  = tip.destinationPoint(bear - 135, w);
+  var back  = tip.destinationPoint(bear + 180, l);
+
+  var arrow = new Array();
+  arrow.push(new google.maps.LatLng(right.lat(), right.lon()));
+  arrow.push(new google.maps.LatLng(tip.lat()  , tip.lon())  );
+  arrow.push(new google.maps.LatLng(back.lat() , back.lon()) );
+  arrow.push(new google.maps.LatLng(tip.lat()  , tip.lon())  );
+  arrow.push(new google.maps.LatLng(left.lat() , left.lon()) );
+
+  var flightPath = new google.maps.Polyline({
+    path: arrow,
+    strokeColor: colourWindArrow,
+    strokeOpacity: 0.8,
+    strokeWeight: 1
+  });
+  flightPath.setMap(map);
 }
+
+/*----------------------------------------------------------------------
+ * Description: This function will draw an arrow at the indicated 
+ *              location, pointing in the specified direction.
+ * Arguments:   loc  - LatLon object
+ *              bear - bearing, in degrees
+ *----------------------------------------------------------------------*/
+function drawArrow_Dir(loc, bear)
+{
+  var l = 0.1; // arrow length
+  var w = 0.1; // arrow width
+  var c = 0;    // arrow center
+  var tip   = loc.destinationPoint(bear      , c);
+  var right = tip.destinationPoint(bear + 135, w);
+  var left  = tip.destinationPoint(bear - 135, w);
+
+  var arrow = new Array();
+  arrow.push(new google.maps.LatLng(right.lat(), right.lon()));
+  arrow.push(new google.maps.LatLng(tip.lat()  , tip.lon())  );
+  arrow.push(new google.maps.LatLng(left.lat() , left.lon()) );
+
+  var flightPath = new google.maps.Polyline({
+    path: arrow,
+    strokeColor: colourArrowDir,
+    strokeOpacity: 1,
+    strokeWeight: 3
+  });
+  flightPath.setMap(map);
+}
+//====== END OF Overlay Functions =========================================
+
+
     
-function testMarkers()
-{
-    var steps = directionsDisplay.directions.routes[0].legs[0].steps;
-    var i,j;
-    var colour = false;
-    for(j = 0; j < steps.length; j++)
-    {
-        var points = steps[j].lat_lngs;
-        for(i = 0; i < points.length; i++)
-        {
-            if(colour)
-                colortext = "blue";
-            else
-                colortext = "red";
-            colour = !colour;
-
-            var latlng = new google.maps.LatLng(points[i].Ia, points[i].Ja);
-            var marker = new google.maps.Marker({
-                    position: latlng,
-                    map: map,
-                    title: "Point " + i,
-                    color: "blue"
-                });
-        }
-    }
-}
-
 /*======================================================================
  * Description: This function will put a marker at the interval 
  *              specified by 'stepDist'. There must already be a route
@@ -177,156 +179,105 @@ wind += 10;
     }
 }
 
-/*======================================================================
- * Description: This function will draw an arrow at the indicated 
- *              location, pointing in the specified direction.
- * Arguments:   loc  - LatLon object
- *              bear - bearing, in degrees
- *======================================================================*/
-function drawArrow_Wind(loc, bear, mag)
+
+
+//====== Route Functions ======================================================
+//----------------------------------------------------------------------
+// Description: This will pull the specified TCX file from the server
+//              and generate a route overlay
+// Arguments:   file - the file name/location
+//----------------------------------------------------------------------
+function plotRoute(file)
 {
-  var l = 0.10*mag; // arrow length
-  var w = 0.05*mag/2;     // arrow width
-  var c = 0.10*mag;     // arrow center
-  var tip   = loc.destinationPoint(bear      , c);
-  var right = tip.destinationPoint(bear + 135, w);
-  var left  = tip.destinationPoint(bear - 135, w);
-  var back  = tip.destinationPoint(bear + 180, l);
-
-  var arrow = new Array();
-  arrow.push(new google.maps.LatLng(right.lat(), right.lon()));
-  arrow.push(new google.maps.LatLng(tip.lat()  , tip.lon())  );
-  arrow.push(new google.maps.LatLng(back.lat() , back.lon()) );
-  arrow.push(new google.maps.LatLng(tip.lat()  , tip.lon())  );
-  arrow.push(new google.maps.LatLng(left.lat() , left.lon()) );
-
-  var flightPath = new google.maps.Polyline({
-    path: arrow,
-    strokeColor: "#FF0000",
-    strokeOpacity: 0.8,
-    strokeWeight: 1
-  });
-  flightPath.setMap(map);
+  $.ajax({
+    type:'GET',
+    url: file,
+    dataType : 'xml',
+    success: generateRouteOverlay,
+    error: function(xmlResp, message, error)
+      {
+        alert("ERROR (plotRoute):\n" + message + "   " + error.message);
+      }
+    });
 }
-function drawArrow_Dir(loc, bear)
+
+//----------------------------------------------------------------------
+// Description: Generates a route overlay onto the map object
+// Arguments:   xml - the TCX xml file that contains route data
+//----------------------------------------------------------------------
+function generateRouteOverlay(xml)
 {
-  var l = 0.1; // arrow length
-  var w = 0.1; // arrow width
-  var c = 0;    // arrow center
-  var tip   = loc.destinationPoint(bear      , c);
-  var right = tip.destinationPoint(bear + 135, w);
-  var left  = tip.destinationPoint(bear - 135, w);
+  route = new Array();                          // Initialize a new route array
+  routeTimes = new Array();                     // Initialize a new routeTimes array
+  var bounds = new google.maps.LatLngBounds();  // Initialize a new google maps boundry (for use later)
+  
+  // Parse the XML to find the route data
+  $(xml).find("TrainingCenterDatabase").find("Activities").find("Activity").find("Lap").find("Track").find("Trackpoint").each(function()
+    {
+      var lat = $(this).find("Position").find("LatitudeDegrees").text();
+      var lon = $(this).find("Position").find("LongitudeDegrees").text();
+      var time = XMLTimeStampToDate($(this).find("Time").text(), false);
 
-  var arrow = new Array();
-  arrow.push(new google.maps.LatLng(right.lat(), right.lon()));
-  arrow.push(new google.maps.LatLng(tip.lat()  , tip.lon())  );
-  arrow.push(new google.maps.LatLng(left.lat() , left.lon()) );
+      // If the lat and lon are specified, add them into the route array
+      if(lat != "" && lon != "" && time != "")
+      {
+        var point = new google.maps.LatLng(lat, lon);
+        routeTimes.push(time);
+        route.push(point);
+        bounds.extend(point);
+      }
+    });
 
+  // Draw the new route using a google maps polylin object
   var flightPath = new google.maps.Polyline({
-    path: arrow,
-    strokeColor: "#0000FF",
-    strokeOpacity: 1,
+    path: route,
+    strokeColor: colourPolyLineRoute,
+    strokeOpacity: 0.8,
     strokeWeight: 3
   });
   flightPath.setMap(map);
+
+  // And center/zoom the new route onto the map
+  map.fitBounds(bounds);
 }
 
-
-
-/*======================================================================
- * Description: This function will draw an arrow at the indicated 
- *              location, pointing in the specified direction.
- * Arguments:   loc  - LatLon object
- *              bear - bearing, in degrees
- *======================================================================*/
-function plotRoute(file)
+//----------------------------------------------------------------------
+// Description: Converts an XML time stamp into a Date object
+//                XML Timestamp Example: 2011-05-17T13:18:50Z
+// Arguments:   xmlDate - the timestamp to convert
+//----------------------------------------------------------------------
+function XMLTimeStampToDate(xmlDate, isUTC)
 {
-    $.ajax({
-        url: file,
-        type: 'HEAD',
-        error: function()
-            {
-                alert("error");
-            },
-        success: function()
-            {
-                //alert("OK");
-            }
-    });
+  var dt = new Date();
 
-    var http = new XMLHttpRequest();
-    http.open('HEAD', file, false);
-    http.send();
-    if(http.status!=404)
-    {
-        //alert("OK2");
-    }
-    else
-    {
-        alert("error2");
-    }
-    
-    
-    $.ajax({
-        type:'GET',
-        url: file,
-        dataType : 'xml',
-        success: generateRouteOverlay,
-        error: function(xmlResp, message, error)
-            {
-                alert(message + "   " + error.message);
-            }
-        });
+  // Get the TIME component
+  var dtS = xmlDate.slice(xmlDate.indexOf('T')+1, xmlDate.indexOf('.'));
+  var TimeArray = dtS.split(":");
+  if(isUTC)
+    dt.setUTCHours(TimeArray[0],TimeArray[1],TimeArray[2]); // HH MM SS
+  else
+    dt.setHours(TimeArray[0],TimeArray[1],TimeArray[2]); // HH MM SS
+
+  // Get the DATE component
+  dtS = xmlDate.slice(0, xmlDate.indexOf('T'));
+  TimeArray = dtS.split("-");
+  if(isUTC)
+    dt.setUTCFullYear(TimeArray[0],TimeArray[1],TimeArray[2]); // YYYY MM DD
+  else
+    dt.setFullYear(TimeArray[0],TimeArray[1],TimeArray[2]); // YYYY MM DD
+
+  return dt;
 }
 
-var route = new Array();
-var routeTimes = new Array();
-var windData = new Array();
-function generateRouteOverlay(xml)
-{
-  route.length=0;
-  routeTimes.length=0;
-  var bounds = new google.maps.LatLngBounds();
-  
-  $(xml).find("TrainingCenterDatabase").find("Activities").find("Activity").find("Lap").find("Track").find("Trackpoint").each(function()
-        {
-                var lat = $(this).find("Position").find("LatitudeDegrees").text();
-                var lon = $(this).find("Position").find("LongitudeDegrees").text();
-                var time = $(this).find("Time").text();
-                if(lat!="" && lon!="")
-                {
-                  route.push(new google.maps.LatLng(lat, lon));
-                  bounds.extend(route[route.length-1]);
-                  routeTimes.push(XMLTimeStampToDate(time));
-                }
-        });
-
-    var flightPath = new google.maps.Polyline({
-        path: route,
-        strokeColor: "#0000FF",
-        strokeOpacity: 0.8,
-        strokeWeight: 3
-    });
-    flightPath.setMap(map);
-    map.fitBounds(bounds);
-}
-
-function XMLTimeStampToDate(xmlDate)
-{
-    var dt = new Date();
-    var dtS = xmlDate.slice(xmlDate.indexOf('T')+1, xmlDate.indexOf('.'))
-    var TimeArray = dtS.split(":");
-    dt.setUTCHours(TimeArray[0],TimeArray[1],TimeArray[2]);
-    dtS = xmlDate.slice(0, xmlDate.indexOf('T'))
-    TimeArray = dtS.split("-");
-    dt.setUTCFullYear(TimeArray[0],TimeArray[1],TimeArray[2]);
-    return dt;
-}
-
+//----------------------------------------------------------------------
+// Description: Converts an CSV time stamp into a Date object
+// Arguments:   csvDate - the timestamp to convert
+//----------------------------------------------------------------------
 function CSVTimeStampToDate(csvDate)
 {
   return new Date(Date.parse(csvDate));
 }
+//====== END OF Route Functions ================================================
 
 function putMarkerEveryKmRoute(stepDist, isWind)
 {
