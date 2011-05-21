@@ -20,7 +20,7 @@
 <script type="text/javascript" src="mapFunc_LatLon.js"></script>
 
 </head>
-<body onload="initialize()">
+<body onload="initializeMap()">
 
   <div id="map_canvas" style="width:100%; height:100%"></div>
   <input type="button" onClick="calcRoute();" value="testing"/>
@@ -45,6 +45,11 @@
 
   <input type="button" onClick="plotRoute('./Routes/2010_06_23_Big_Springs_Loop (edited).tcx');" value="Plot TRX Route 3" />
   <input type="button" onClick="putRealWindMarkers(0.2);" value="Add REAL Wind 3" />
+
+  <br>
+
+  <input type="button" onClick="plotRoute('./Routes/03_21_2010_Route___Hiway_66.tcx');" value="Plot TRX Route 4" />
+  <input type="button" onClick="putRealWindMarkers(0.2);" value="Add REAL Wind 4" />
 
   <br><br>
 

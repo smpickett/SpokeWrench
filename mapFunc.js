@@ -5,7 +5,7 @@
 
 
 //====== Settings =========================================================
-var colourArrowWind = "#00FF00";
+var colourArrowWind = "#FF0000";
 var colourArrowDir  = "#0000FF";
 var colourPolyLineRoute = "#0000FF";
 //====== END OF Settings ==================================================
@@ -26,7 +26,7 @@ function initializeMap()
     // Create a map and center it on Calgary, AB
     var latlng = new google.maps.LatLng(51.045,-114.057222);
     var mapOptions = {
-      zoom: 12,
+      zoom: 10,
       center: latlng,
       mapTypeId: google.maps.MapTypeId.ROADMAP
     };
@@ -80,7 +80,7 @@ function drawArrow_Wind(loc, bear, mag)
 
   var flightPath = new google.maps.Polyline({
     path: arrow,
-    strokeColor: colourWindArrow,
+    strokeColor: colourArrowWind,
     strokeOpacity: 0.8,
     strokeWeight: 1
   });
@@ -252,7 +252,7 @@ function XMLTimeStampToDate(xmlDate, isUTC)
 
   // Get the TIME component
   var dtS = xmlDate.slice(xmlDate.indexOf('T')+1, xmlDate.indexOf('.'));
-  var TimeArray = dtS.split(":");
+  var TimeArray = dtS.split(/:|-/);
   if(isUTC)
     dt.setUTCHours(TimeArray[0],TimeArray[1],TimeArray[2]); // HH MM SS
   else
@@ -262,9 +262,9 @@ function XMLTimeStampToDate(xmlDate, isUTC)
   dtS = xmlDate.slice(0, xmlDate.indexOf('T'));
   TimeArray = dtS.split("-");
   if(isUTC)
-    dt.setUTCFullYear(TimeArray[0],TimeArray[1],TimeArray[2]); // YYYY MM DD
+    dt.setUTCFullYear(TimeArray[0],TimeArray[1]-1,TimeArray[2]); // YYYY MM DD
   else
-    dt.setFullYear(TimeArray[0],TimeArray[1],TimeArray[2]); // YYYY MM DD
+    dt.setFullYear(TimeArray[0],TimeArray[1]-1,TimeArray[2]); // YYYY MM DD
 
   return dt;
 }
@@ -336,12 +336,12 @@ function putRealWindMarkers(stepDist)
   // First, add the direction marker
   putMarkerEveryKmRoute(2.0, false);
 
-  windData.length = 0;
+  windData = new Array();
   // Then, download the WIND data
   $.ajax({
       type:'POST',
       url: 'WeatherFunctions_Test.php',
-      data: { ID: "IABCALGA14", day: routeTimes[0].getDate(), month: routeTimes[0].getMonth()+1, year: routeTimes[0].getYear()-100+2000 },
+      data: { ID: "IABCALGA9"/*"IABCALGA14"*/, day: routeTimes[0].getDate(), month: routeTimes[0].getMonth()+1, year: routeTimes[0].getYear()-100+2000 },
       dataType : 'json',
       success: function(data)
       {
@@ -391,7 +391,7 @@ function putWindMarkerEveryKmRoute(stepDist)
           markerCnt++;
 
           // Find the nearest weather timestamp, and get the direction (in degrees)
-          var windIndex = findNearestTime(routeTimes[i].getTime()/*-2678390837*//*-4560000*/, windData);
+          var windIndex = findNearestTime(routeTimes[i].getTime(), windData);
           var windDir = windData[windIndex][1];
           var windMag = windData[windIndex][2];
 
