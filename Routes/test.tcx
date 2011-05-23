@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.garmin.com/xmlschemas/ActivityExtension/v2 http://www.garmin.com/xmlschemas/ActivityExtensionv2.xsd http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd">
+  <Activities>
+    <Activity Sport="Biking">
+      <Id>2011-05-17T13:18:50Z</Id>
+      <Lap StartTime="2011-05-17T13:18:50Z">
+        <TotalTimeSeconds>957.5900000</TotalTimeSeconds>
+        <DistanceMeters>4636.2407227</DistanceMeters>
+        <MaximumSpeed>9.3490400</MaximumSpeed>
+        <Calories>139</Calories>
+        <AverageHeartRateBpm xsi:type="HeartRateInBeatsPerMinute_t">
+          <Value>150</Value>
+        </AverageHeartRateBpm>
+        <MaximumHeartRateBpm xsi:type="HeartRateInBeatsPerMinute_t">
+          <Value>166</Value>
+        </MaximumHeartRateBpm>
+        <Intensity>Active</Intensity>
+        <TriggerMethod>Manual</TriggerMethod>
+        <Track>
+          <Trackpoint>
+            <Time>2011-05-17T13:18:50Z</Time>
+            <Position>
+              <LatitudeDegrees>51.1599461</LatitudeDegrees>
+              <LongitudeDegrees>-114.0395761</LongitudeDegrees>
+            </Position>
+            <AltitudeMeters>1089.7917480</AltitudeMeters>
+            <DistanceMeters>0.0000000</DistanceMeters>
+            <HeartRateBpm xsi:type="HeartRateInBeatsPerMinute_t">
+              <Value>87</Value>
+            </HeartRateBpm>
+            <SensorState>Absent</SensorState>
+        </Trackpoint>
+          <Trackpoint>
+            <Time>2011-05-17T13:18:51Z</Time>
+            <Position>
+              <LatitudeDegrees>51.1599465</LatitudeDegrees>
+              <LongitudeDegrees>-114.0395767</LongitudeDegrees>
+            </Position>
+            <AltitudeMeters>1089.7917480</AltitudeMeters>
+            <DistanceMeters>0.0026470</DistanceMeters>
+            <HeartRateBpm xsi:type="HeartRateInBeatsPerMinute_t">
+              <Value>87</Value>
+            </HeartRateBpm>
+            <SensorState>Absent</SensorState>
+          </Trackpoint>
+          <Trackpoint>
+            <Time>2011-05-17T13:18:52Z</Time>
+            <Position>
+              <LatitudeDegrees>51.1599431</LatitudeDegrees>
+              <LongitudeDegrees>-114.0395860</LongitudeDegrees>
+            </Position>
+            <AltitudeMeters>1089.7917480</AltitudeMeters>
+            <DistanceMeters>0.8835257</DistanceMeters>
+            <HeartRateBpm xsi:type="HeartRateInBeatsPerMinute_t">
+              <Value>85</Value>
+            </HeartRateBpm>
+            <SensorState>Absent</SensorState>
+          </Trackpoint>
+      </Track>
+    </Lap>
+  </Activity>
+  </Activities>
+</TrainingCenterDatabase>

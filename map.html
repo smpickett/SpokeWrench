@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+  <link rel="stylesheet" type="text/css" href="map.css">
+<title>gMaps Plotting</title>
+
+<script type="text/javascript" src="jquery.min.js"></script>
+<script type="text/javascript">
+    $(document).ready(function()
+            {
+
+            });
+</script>
+<script type="text/javascript"
+    src="http://maps.google.com/maps/api/js?sensor=false">
+</script>
+<script type="text/javascript" src="mapFunc.js"></script>
+<script type="text/javascript" src="mapFunc_LatLon.js"></script>
+
+</head>
+<body onload="initializeMap()">
+
+  <div id="map_canvas" style="width:100%; height:100%"></div>
+  <input type="button" onClick="calcRoute();" value="testing"/>
+  <input type="button" onClick="testMarkers();" value="testing2"/>
+  <input type="button" onClick="putMarkerEveryKm(0.1);" value="testing3"/>
+
+  <br>
+
+  <?php include('WeatherFunctions.php') ?>
+
+  <br>
+
+  <input type="button" onClick="plotRoute('./Routes/5_17_2011 7_18_50 AM_history.tcx');" value="Plot TRX Route" />
+  <input type="button" onClick="putRealWindMarkers(0.2);" value="Add REAL Wind" />
+
+  <br>
+
+  <input type="button" onClick="plotRoute('./Routes/5_16_2011 12_07_12 PM_history.tcx');" value="Plot TRX Route 2" />
+  <input type="button" onClick="putRealWindMarkers(0.2);" value="Add REAL Wind 2" />
+
+  <br>
+
+  <input type="button" onClick="plotRoute('./Routes/2010_06_23_Big_Springs_Loop (edited).tcx');" value="Plot TRX Route 3" />
+  <input type="button" onClick="putRealWindMarkers(0.2);" value="Add REAL Wind 3" />
+
+  <br>
+
+  <input type="button" onClick="plotRoute('./Routes/03_21_2010_Route___Hiway_66.tcx');" value="Plot TRX Route 4" />
+  <input type="button" onClick="putRealWindMarkers(0.2);" value="Add REAL Wind 4" />
+
+  <br><br>
+
+    
+
+</body>
+</html>
+
+
+
