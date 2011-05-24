@@ -1,11 +1,21 @@
 <?php
+/*==============================================================*/
+/* File: DrawAddRideTable.php                                   */
+/* Copyright (c) 2011, Stephen Pickett                          */
+/*==============================================================*/
 
 DrawAddRideTable();
 
+/*==============================================================*/
+/* FUNCTION:  DrawAddRideTable()                                */
+/* PURPOSE:   Draws the HTML table to add rides                 */
+/*==============================================================*/
 function DrawAddRideTable()
 {
-  echo "<form onSubmit='return Submit_AddRide()'>";
+  /* Get a list of available routes */
+  $tcxRoutes = glob("./Routes/*.*");
 
+  echo "<form onSubmit='return Submit_AddRide()'>";
   /* -------------------------------- */
   /* Draw the Add Ride table entry    */
   /* -------------------------------- */
@@ -15,7 +25,18 @@ function DrawAddRideTable()
   echo "  <tr><td colspan='2' class='dataHeader'>Basic Data</td></tr>";
   echo "  <tr><td>Date:</td><td class='dataEntry'><input type='text' id='date' size='18'/></td></tr>";
   echo "  <tr><td>Time:</td><td class='dataEntry'><input type='text' id='time' size='8'/></td></tr>";
-  echo "  <tr><td>Route:</td><td class='dataEntry'><input type='text' id='route' size='35'/></td></tr>";
+  echo "  <tr><td>Route Name:</td><td class='dataEntry'><input type='text' id='route' size='35'/></td></tr>";
+  echo "  <tr><td>Route File:</td><td class='dataEntry'><select id='route_file'>";
+    echo "    <option value='NONE'></option>";
+  foreach($tcxRoutes as $file)
+  {
+    /*
+    $info = pathinfo($file);
+    echo "    <option value=".basename($file,'.'.$info['extension']).">".basename($file,'.'.$info['extension'])."</option>";
+    */
+    echo "    <option value=".basename(str_replace(" ","_",$file)).">".basename($file)."</option>";
+  }
+  echo "  </select></td></tr>";
   echo "  <tr>
             <td>Type:</td>
             <td class='dataEntry'>

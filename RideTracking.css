@@ -173,6 +173,8 @@ div.div_dataTable
 {
   float:left;
   margin-right:14px;
+  width:800px;
+  overflow:auto;
 }
 
 div.div_addData

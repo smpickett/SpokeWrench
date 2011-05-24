@@ -50,6 +50,7 @@ function DrawTable()
     echo '<th>Calories</th>';
     echo '<th>Ave HR</th>';
     echo '<th>Max HR</th>';
+    echo '<th class="hidden"></th>';    /* route_file */
   echo '</tr>';
   echo '</thead>';
 
@@ -69,8 +70,12 @@ function DrawTable()
 	  /* Output the data from the main ride table */
     echo '<td>'.$dataarray['date'].'</td>';
 	  echo '<td>'.$dataarray['time'].'</td>';
-	  echo '<td>'.$dataarray['route'].'</td>';
-	  echo '<td>'.$dataarray['type'].'</td>';
+    echo '<td>'.$dataarray['route'];
+      /* If there is a route file linked, show the icon */
+      if($dataarray['fileID_route'] != null)
+        echo '  <img src="../resources/web-orange-buttons-by-axialis-team/ico/Picture.ico" width="12" height="12" style="vertical-align:text-top;float:right;">';
+    echo '</td>';
+    echo '<td>'.$dataarray['type'].'</td>';
 
     /* Get data from the speedometer and output */
     $sqlstr = "SELECT * FROM `".$mysql_db."`.`".$mysql_tbl_speedometer."` WHERE dataId=".$dataarray['dataID_Speedometer'];
@@ -90,6 +95,9 @@ function DrawTable()
 	  echo '<td>'.$dataarray_data['avehr'].'</td>';
 	  echo '<td>'.$dataarray_data['maxhr'].'</td>';
     mysql_free_result($result);
+
+    /* Get the route file, but don't actually show it (hidden) */
+    echo '<td class="hidden">'.$dataarray['fileID_route'].'</td>';
 
     echo '</tr>';
   }

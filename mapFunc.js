@@ -16,13 +16,11 @@ var map;
 var route;          // Contains Google Maps lat lon coordinate sets
 var routeTimes      // Contains Date objects
 var windData;       // Contains WindInfo objects
+var markers = new Array();  // Contains a list of markers added to the map
 //====== END OF Global Variables ==========================================
 
 function initializeMap()
 {
-    // Instantiate a new directions service
-    directionsService = new google.maps.DirectionsService();
-
     // Create a map and center it on Calgary, AB
     var latlng = new google.maps.LatLng(51.045,-114.057222);
     var mapOptions = {
@@ -55,6 +53,19 @@ WindInfo.prototype.getInfo = function()
 
 //====== Overlay Functions ================================================
 /*----------------------------------------------------------------------
+ * Description: Clears all known overlays on the map
+ *----------------------------------------------------------------------*/
+function clearOverlays()
+{
+  if (markers) {
+    for (i in markers) {
+      markers[i].setMap(null);
+    }
+  }
+}
+
+
+/*----------------------------------------------------------------------
  * Description: This function will draw an arrow at the indicated 
  *              location, pointing in the specified direction.
  * Arguments:   loc  - LatLon object
@@ -85,6 +96,7 @@ function drawArrow_Wind(loc, bear, mag)
     strokeWeight: 1
   });
   flightPath.setMap(map);
+  markers.push(flightPath);
 }
 
 /*----------------------------------------------------------------------
@@ -114,6 +126,7 @@ function drawArrow_Dir(loc, bear)
     strokeWeight: 3
   });
   flightPath.setMap(map);
+  markers.push(flightPath);
 }
 //====== END OF Overlay Functions =========================================
 
@@ -193,10 +206,18 @@ function plotRoute(file)
     type:'GET',
     url: file,
     dataType : 'xml',
-    success: generateRouteOverlay,
+    success: function(xml)
+      {
+        // Draw the route overlay
+        generateRouteOverlay(xml);
+
+        // Search for the closest weather station and plot the wind
+        var id = weatherFindClosestStation(route[0].Ja, route[0].Ka);
+        putRealWindMarkers(0.2, id);
+      },
     error: function(xmlResp, message, error)
       {
-        alert("ERROR (plotRoute):\n" + message + "   " + error.message);
+        //alert("ERROR (plotRoute):\n" + message + "   " + error);
       }
     });
 }
@@ -236,6 +257,7 @@ function generateRouteOverlay(xml)
     strokeWeight: 3
   });
   flightPath.setMap(map);
+  markers.push(flightPath);
 
   // And center/zoom the new route onto the map
   map.fitBounds(bounds);
@@ -331,7 +353,7 @@ wind += 1;
 
 /*=============================================*/
 
-function putRealWindMarkers(stepDist)
+function putRealWindMarkers(stepDist, stationid)
 {
   // First, add the direction marker
   putMarkerEveryKmRoute(2.0, false);
@@ -341,7 +363,7 @@ function putRealWindMarkers(stepDist)
   $.ajax({
       type:'POST',
       url: 'WeatherFunctions_Test.php',
-      data: { ID: "IABCALGA9"/*"IABCALGA14"*/, day: routeTimes[0].getDate(), month: routeTimes[0].getMonth()+1, year: routeTimes[0].getYear()-100+2000 },
+      data: { ID: stationid/*"IABCALGA9"*//*"IABCALGA14"*/, day: routeTimes[0].getDate(), month: routeTimes[0].getMonth()+1, year: routeTimes[0].getYear()-100+2000 },
       dataType : 'json',
       success: function(data)
       {
@@ -355,11 +377,7 @@ function putRealWindMarkers(stepDist)
 
         putWindMarkerEveryKmRoute(0.2);
       },
-      error: function(data){ alert("Error"); },
-      complete: function(jqXHR, textStatus)
-        {
-          //alert("Complete:"+textStatus);
-        }
+      error: function(data){ alert("Error"); }
   });
 }
 

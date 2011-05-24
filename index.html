@@ -5,8 +5,13 @@
 <title>Ride Tracking</title>
 
 <link rel="stylesheet" type="text/css" href="RideTracking.css">
+<link rel="stylesheet" type="text/css" href="map.css">
 
 <script type="text/javascript" src="jquery.min.js"></script>
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="mapFunc.js"></script>
+<script type="text/javascript" src="mapFunc_LatLon.js"></script>
+<script type="text/javascript" src="weatherFunc.js"></script>
 <script type="text/javascript">
   var selected_rows = new Array()
 
@@ -81,6 +86,16 @@
       $('#EditSelectedRide').unbind('mouseenter mouseleave click');
       $('#EditSelectedRide').animate({opacity: 0.2}, 250);
     }
+
+    /* And show the google maps route */
+    var route_file = document.getElementById('tableDataMain').rows[row[0].rowIndex].cells[13].innerText;
+    if(route_file != "")
+    {
+      // Remove existing routes and information before plotting the new route
+      clearOverlays();
+      plotRoute('./Routes/'+route_file);
+    }
+
   }
 
 
@@ -93,9 +108,11 @@
     {
       var row = selected_rows[0];
       EditSelectedRideId = RideIdentityFromRow(row);
+
+      // Update the 'Edit' table
       $('input#date').val(document.getElementById('tableDataMain').rows[row].cells[2].innerHTML);
       $('input#time').val(document.getElementById('tableDataMain').rows[row].cells[3].innerHTML);
-      $('input#route').val(document.getElementById('tableDataMain').rows[row].cells[4].innerHTML);
+      $('input#route').val(document.getElementById('tableDataMain').rows[row].cells[4].innerText);
       $('select#type').val(document.getElementById('tableDataMain').rows[row].cells[5].innerHTML);
       $('input#SPD_time').val(document.getElementById('tableDataMain').rows[row].cells[6].innerHTML);
       $('input#SPD_dist').val(document.getElementById('tableDataMain').rows[row].cells[7].innerHTML);
@@ -104,6 +121,15 @@
       $('input#HRM_cals').val(document.getElementById('tableDataMain').rows[row].cells[10].innerHTML);
       $('input#HRM_avehr').val(document.getElementById('tableDataMain').rows[row].cells[11].innerHTML);
       $('input#HRM_maxhr').val(document.getElementById('tableDataMain').rows[row].cells[12].innerHTML);
+
+      // Reset the route file selection
+      $("select#route_file").val(0);
+      // Try and match the route file selection
+      $("select#route_file option").filter(function() {
+        return this.value == document.getElementById('tableDataMain').rows[row].cells[13].innerText;
+        }).attr('selected', 'selected');
+
+      // Edit the table information to reflect an 'Edit' instead of an 'Add'
       $('input#AddEditRideButton').val('Save');
       $('input#AddEditRideButton').removeAttr('onClick');
       $('input#AddEditRideButton').unbind('click');
@@ -308,7 +334,7 @@ function ShowHideTableRow(rowSelector, show, callback)
 
 
 
-<body>
+<body onload="initializeMap()">
   <div class="div_dataTable" id="div_tableData">
     <table class="icons" id="table_icons">
     <tr>
@@ -349,12 +375,13 @@ function ShowHideTableRow(rowSelector, show, callback)
                 date: $('input#date').val(),
                 time: $('input#time').val(),
                 route: $('input#route').val(),
+                route_file: $('select#route_file').val(),
                 category: $('select#type').val(),
                 DataSpeedometer_cadence: $('input#SPD_avecad').val(),
                 DataSpeedometer_time: $('input#SPD_time').val(),
                 DataSpeedometer_dist: $('input#SPD_dist').val(),
                 DataHrMonitor_avehr: $('input#HRM_avehr').val(),
-                DataHrMonitor_maxhr: $('input#HRM_avehr').val(),
+                DataHrMonitor_maxhr: $('input#HRM_maxhr').val(),
                 DataHrMonitor_time: $('input#HRM_time').val(),
                 DataHrMonitor_calories: $('input#HRM_cals').val(),
               },
@@ -366,6 +393,11 @@ function ShowHideTableRow(rowSelector, show, callback)
     }
     </script>
     <?php include('DrawAddRideTable.php'); ?>
+  </div>
+
+  <div class="map" id="map_canvas">
+
+
   </div>
 <br>
 

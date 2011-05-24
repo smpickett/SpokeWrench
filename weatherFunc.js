@@ -2,213 +2,92 @@
 /* FILE: weatherFunc.js                                 */
 /* Copyright (c) 2011 SpokeWrench                       */
 /*======================================================*/
-var
 
+//====== Settings =========================================================
+var stringUrlWU = "http://api.wunderground.com/auto/wui/geo/GeoLookupXML/index.xml?query="
+//====== END OF Settings ==================================================
 
+//====== Global Variables =================================================
+var stationList = [];          // Contains a list of stations in the area
+//====== END OF Global Variables ==========================================
 
-
-
-
-
-var map;
-var directionsDisplay;
-var directionsService;
-var markerArray = [];
-    
-function initialize()
-{
-    // Instantiate a new directions service
-    directionsService = new google.maps.DirectionsService();
-
-    // Create a map and center it on Spring Bank airport
-    var latlng = new google.maps.LatLng(51.110204,-114.411621);
-    var mapOptions = {
-      zoom: 12,
-      center: latlng,
-      mapTypeId: google.maps.MapTypeId.ROADMAP
-    };
-    map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-
-    // Create a renderer for directions and bind it to the map
-    var rendererOptions = {
-        map: map
-    };
-    directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
-
-    // Instantiate an info whos
+//====== Objects ==========================================================
+function WeatherStation(id, lat, lon, dist) {
+  if (lat == undefined)  lat = 0;
+  if (lon == undefined)  lon = 0;
+  if (dist == undefined) dist = 9999;
+  this.id = id;
+  this.lat = lat;
+  this.lon = lon;
+  this.distance = dist;
 }
+WeatherStation.prototype.distanceTo = function(station) {
+  var stationA = new LatLon(this.lat, this.lon);
+  var stationB = new LatLon(station.lat, station.lon);
+  return stationA.distanceTo(stationB);
+}
+WeatherStation.prototype.distanceTo = function(lat, lon) {
+  var stationA = new LatLon(this.lat, this.lon);
+  var stationB = new LatLon(lat, lon);
+  return stationA.distanceTo(stationB);
+}
+//====== END OF Objects ===================================================
 
-function calcRoute()
+
+
+/*----------------------------------------------------------------------
+ * Description: Based on the provided coordinates, finds the closest
+ *              weather station, and returns the ID
+ * Arguments:   lat - latitude of the point to search
+ *              lon - longitude of the point to serach
+ *----------------------------------------------------------------------*/
+function weatherFindClosestStation(lat, lon)
 {
-  // First, clear out all existing markerArrays
-  for (i = 0; i < markerArray.length; i++) {
-    markerArray[i].setMap(null);
-  }
+  var xmlstring = stringUrlWU+lat+','+lon;
 
-  // Retrieve the start and end locations and create
-  // a DirectionsRequest using BIKING directions
-  var start = "Springbank Airport";
-  var end = "Glenbow Lake";
-  var request = {
-      origin: start,
-      destination: end,
-      travelMode: google.maps.TravelMode.DRIVING
-  };
-
-  // Route the directions
-  directionsService.route(request, function(response, status)
-    {
-      if (status == google.maps.DirectionsStatus.OK)
+  $.ajax({
+    type:'GET',
+    url:xmlstring,
+    dataType:'xml',
+    success: function(xml)
       {
-        directionsDisplay.setDirections(response);
-      }
-      else
-      {
-        alert("bad");
-      }
-    });
-}
+        /* I'm not yet sure how to query history from airport data */
+        /*
+        $(xml).find('nearby_weather_stations').find('airport').find('station').each(function(){
+          var stationlat = $(this).find('lat');
+          var stationlon = $(this).find('lon');
+          var stationid  = $(this).find('icao');
+          stationList.push(new WeatherStation(stationid, stationlat, stationlon));
+        });
+        */
 
+        /* Grab a list of weather stations near the specified coordinates */
+        $(xml).find('nearby_weather_stations').find('pws').find('station').each(function(){
+          var stationid   = $(this).find('id');
+          var stationdist = $(this).find('distance_km');
+          stationList.push(new WeatherStation(stationid, lat, lon, stationdist));
+        });
 
-
-function WindInfo()
-{
-    this.direction = new Array();
-    this.time = new Array();
-    this.strength = new Array();
-}
-WindInfo.prototype.add = function(dir, tim, str)
-{
-    this.direction.push(dir);
-    this.time.push(tim);
-    this.strength.push(str);
-};
-WindInfo.prototype.getInfo = function()
-{
-    return "no info yet";
-};
-
-
-function OverlayWind()
-{
-    var wind = new WindInfo();
-    wind.add(1, 2, 3);
-    alert(wind.getInfo());
-}
-    
-function testMarkers()
-{
-    var steps = directionsDisplay.directions.routes[0].legs[0].steps;
-    var i,j;
-    var colour = false;
-    for(j = 0; j < steps.length; j++)
-    {
-        var points = steps[j].lat_lngs;
-        for(i = 0; i < points.length; i++)
+        /* Now search through the stations and return the ID of the closest one */
+        var dist = 9999;
+        var beststation;
+        for(i in stationList)
         {
-            if(colour)
-                colortext = "blue";
-            else
-                colortext = "red";
-            colour = !colour;
-
-            var latlng = new google.maps.LatLng(points[i].Ia, points[i].Ja);
-            var marker = new google.maps.Marker({
-                    position: latlng,
-                    map: map,
-                    title: "Point " + i,
-                    color: "blue"
-                });
+          if(stationList[i].dist < dist)
+          {
+            dist = stationList[i].dist;
+            beststation = stationList[i].id;
+          }
         }
-    }
-}
-
-/*======================================================================
- * Description: This function will put a marker at the interval 
- *              specified by 'stepDist'. There must already be a route
- *              loaded onto the map.
- * Arguments:   stepDist - distance, specified in km
- *======================================================================*/
-function putMarkerEveryKm(stepDist)
-{
-    var steps = directionsDisplay.directions.routes[0].legs[0].steps;
-    var i,j;
-    var pointArrIa = new Array();
-    var pointArrJa = new Array();
-    var pointArr = new Array();
-
-    for(i = 0; i < steps.length; i++)
-    {
-      var points = steps[i].lat_lngs;
-      for(j = 0; j < points.length; j++)
+        return beststation;
+      },
+    error: function(xmlResp, message, error)
       {
-        pointArr.push(new LatLon(points[j].Ia, points[j].Ja));
+        alert('weatherFindClosestStation - error\n'+error+'\n'+message);
       }
-    }
-
-    var ovrDist = 0;
-    var markerCnt = 0;
-var wind = 0;
-    for(i = 1; i < pointArr.length; i++)
-    {
-      var ppDist = parseFloat(pointArr[i].distanceTo(pointArr[i-1]));
-      var ppBearing = pointArr[i].bearingTo(pointArr[i-1]);
-      if(ovrDist + ppDist >= stepDist)
-      {
-        var lastPos = pointArr[i-1];
-        do
-        {
-          var markerPos = lastPos.destinationPoint(ppBearing, -Math.abs(stepDist-ovrDist));
-          var markerPosGM = new google.maps.LatLng(markerPos.lat(), markerPos.lon());
-          markerCnt++;
-/*
-   var markerGM = new google.maps.Marker({
-                  position: markerPosGM,
-                  map: map,
-                  title: markerCnt * stepDist + " km"
-              });
-*/
-          drawArrow(markerPos, wind); /* Draw an arrow too! */
-          ppDist = ppDist - (stepDist - ovrDist);
-          lastPos = markerPos;
-          ovrDist = 0;
-wind += 10;
-        } while(ppDist > stepDist)
-        ovrDist = ppDist;
-      }
-      else
-      {
-        ovrDist += ppDist;
-      }
-    }
-}
-
-/*======================================================================
- * Description: This function will draw an arrow at the indicated 
- *              location, pointing in the specified direction.
- * Arguments:   loc  - LatLon object
- *              bear - bearing, in degrees
- *======================================================================*/
-function drawArrow(loc, bear)
-{
-  var point1 = loc;
-  var point2 = loc.destinationPoint(bear + 135, 0.02);
-  var point3 = loc.destinationPoint(bear - 135, 0.02);
-  var point4 = loc.destinationPoint(bear + 180, 0.07);
-
-  var arrow = new Array();
-  arrow.push(new google.maps.LatLng(point2.lat(), point2.lon()));
-  arrow.push(new google.maps.LatLng(point1.lat(), point1.lon()));
-  arrow.push(new google.maps.LatLng(point4.lat(), point4.lon()));
-  arrow.push(new google.maps.LatLng(point1.lat(), point1.lon()));
-  arrow.push(new google.maps.LatLng(point3.lat(), point3.lon()));
-
-  var flightPath = new google.maps.Polyline({
-    path: arrow,
-    strokeColor: "#FF0000",
-    strokeOpacity: 0.4,
-    strokeWeight: 2
   });
-
-  flightPath.setMap(map);
 }
+
+
+
+

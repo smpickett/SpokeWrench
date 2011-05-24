@@ -67,8 +67,8 @@ function AddRide()
 
 
   /* Now add the data to the main table, with the linked ID for the data */
-  $sql_insert_main = "INSERT INTO `".$mysql_db."`.`".$mysql_tbl."` (date, time, route, type, dataID_Speedometer, dataID_Heartmonitor)
-                      VALUES ('".$_POST["date"]."','".$_POST["time"]."','".$_POST["route"]."','".$_POST["category"]."','".$dataId_Speedometer."','".$dataId_Heartmonitor."')";
+  $sql_insert_main = "INSERT INTO `".$mysql_db."`.`".$mysql_tbl."` (date, time, route, fileID_route, type, dataID_Speedometer, dataID_Heartmonitor)
+                      VALUES ('".$_POST["date"]."','".$_POST["time"]."','".$_POST["route"]."','".$_POST["route_file"]."','".$_POST["category"]."','".$dataId_Speedometer."','".$dataId_Heartmonitor."')";
   if(!mysql_query($sql_insert_main, $db))
   {
     die('<br>Could not connect to MySQL db. Error:' . mysql_error());
