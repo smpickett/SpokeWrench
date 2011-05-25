@@ -128,71 +128,25 @@ function drawArrow_Dir(loc, bear)
   flightPath.setMap(map);
   markers.push(flightPath);
 }
+/*----------------------------------------------------------------------
+ * Description: This function will draw a station marker at the specified
+ *              location
+ * Arguments:   loc  - LatLon object
+ *----------------------------------------------------------------------*/
+function drawStationMarker(loc)
+{
+  var locGM = new google.maps.LatLng(loc.lat(), loc.lon());
+  var markerGM = new google.maps.Marker({
+                 position: locGM,
+                 map: map,
+                 });
+  markers.push(markerGM);
+}
+
 //====== END OF Overlay Functions =========================================
 
 
     
-/*======================================================================
- * Description: This function will put a marker at the interval 
- *              specified by 'stepDist'. There must already be a route
- *              loaded onto the map.
- * Arguments:   stepDist - distance, specified in km
- *======================================================================*/
-function putMarkerEveryKm(stepDist)
-{
-    var steps = directionsDisplay.directions.routes[0].legs[0].steps;
-    var i,j;
-    var pointArrIa = new Array();
-    var pointArrJa = new Array();
-    var pointArr = new Array();
-
-    for(i = 0; i < steps.length; i++)
-    {
-      var points = steps[i].lat_lngs;
-      for(j = 0; j < points.length; j++)
-      {
-        pointArr.push(new LatLon(points[j].Ja, points[j].Ka));
-      }
-    }
-
-    var ovrDist = 0;
-    var markerCnt = 0;
-var wind = 0;
-    for(i = 1; i < pointArr.length; i++)
-    {
-      var ppDist = parseFloat(pointArr[i].distanceTo(pointArr[i-1]));
-      var ppBearing = pointArr[i].bearingTo(pointArr[i-1]);
-      if(ovrDist + ppDist >= stepDist)
-      {
-        var lastPos = pointArr[i-1];
-        do
-        {
-          var markerPos = lastPos.destinationPoint(ppBearing, -Math.abs(stepDist-ovrDist));
-          var markerPosGM = new google.maps.LatLng(markerPos.lat(), markerPos.lon());
-          markerCnt++;
-/*
-   var markerGM = new google.maps.Marker({
-                  position: markerPosGM,
-                  map: map,
-                  title: markerCnt * stepDist + " km"
-              });
-*/
-          drawArrow_Wind(markerPos, wind); /* Draw an arrow too! */
-          ppDist = ppDist - (stepDist - ovrDist);
-          lastPos = markerPos;
-          ovrDist = 0;
-wind += 10;
-        } while(ppDist > stepDist)
-        ovrDist = ppDist;
-      }
-      else
-      {
-        ovrDist += ppDist;
-      }
-    }
-}
-
-
 
 //====== Route Functions ======================================================
 //----------------------------------------------------------------------
@@ -211,9 +165,19 @@ function plotRoute(file)
         // Draw the route overlay
         generateRouteOverlay(xml);
 
-        // Search for the closest weather station and plot the wind
-        var id = weatherFindClosestStation(route[0].Ja, route[0].Ka);
-        putRealWindMarkers(0.2, id);
+        // Get a list of the nearby stations
+        weatherFindClosestStation(route[0].lat(), route[0].lon(), function(stationlist) {
+            var success = false;
+            var i = 0;
+            do
+            {
+              // Try to get wind data
+              putRealWindMarkers(0.2, stationlist[i].id, function(value){success=value;});
+              i++;
+            }
+            while(!success && i<stationlist.length)
+            drawStationMarker(new LatLon(stationlist[i-1].lat, stationlist[i-1].lon));
+          });
       },
     error: function(xmlResp, message, error)
       {
@@ -242,16 +206,25 @@ function generateRouteOverlay(xml)
       // If the lat and lon are specified, add them into the route array
       if(lat != "" && lon != "" && time != "")
       {
-        var point = new google.maps.LatLng(lat, lon);
         routeTimes.push(time);
-        route.push(point);
-        bounds.extend(point);
+        route.push(new LatLon(lat, lon));
       }
     });
 
+  // Convert the LatLon object to a google maps LatLng object
+  //   Note: we do this because google maps is RETARDED and keeps
+  //   switching the coordinates from Ia, Ja to Ja, Ka. GAAAAA.
+  var routeGM = new Array();
+  for(i in route)
+  {
+    var pointGM = new google.maps.LatLng(route[i].lat(), route[i].lon());
+    routeGM.push(pointGM);
+    bounds.extend(pointGM);
+  }
+
   // Draw the new route using a google maps polylin object
   var flightPath = new google.maps.Polyline({
-    path: route,
+    path: routeGM,
     strokeColor: colourPolyLineRoute,
     strokeOpacity: 0.8,
     strokeWeight: 3
@@ -306,23 +279,17 @@ function putMarkerEveryKmRoute(stepDist, isWind)
     var i,j;
     var pointArrIa = new Array();
     var pointArrJa = new Array();
-    var pointArr = new Array();
-
-    for(i = 0; i < route.length; i++)
-    {
-        pointArr.push(new LatLon(route[i].Ja, route[i].Ka));
-    }
 
     var ovrDist = 0;
     var markerCnt = 0;
 var wind = 0;
-    for(i = 1; i < pointArr.length; i++)
+    for(i = 1; i < route.length; i++)
     {
-      var ppDist = parseFloat(pointArr[i].distanceTo(pointArr[i-1]));
-      var ppBearing = pointArr[i].bearingTo(pointArr[i-1]);
+      var ppDist = parseFloat(route[i].distanceTo(route[i-1]));
+      var ppBearing = route[i].bearingTo(route[i-1]);
       if(ovrDist + ppDist >= stepDist)
       {
-        var lastPos = pointArr[i-1];
+        var lastPos = route[i-1];
         do
         {
           var markerPos = lastPos.destinationPoint(ppBearing, -Math.abs(stepDist-ovrDist));
@@ -353,7 +320,7 @@ wind += 1;
 
 /*=============================================*/
 
-function putRealWindMarkers(stepDist, stationid)
+function putRealWindMarkers(stepDist, stationid, callback)
 {
   // First, add the direction marker
   putMarkerEveryKmRoute(2.0, false);
@@ -362,11 +329,21 @@ function putRealWindMarkers(stepDist, stationid)
   // Then, download the WIND data
   $.ajax({
       type:'POST',
-      url: 'WeatherFunctions_Test.php',
-      data: { ID: stationid/*"IABCALGA9"*//*"IABCALGA14"*/, day: routeTimes[0].getDate(), month: routeTimes[0].getMonth()+1, year: routeTimes[0].getYear()-100+2000 },
+      url: './PHP/WeatherFunctions.php',
+      data: { func: 'GetWeatherData', ID: stationid, day: routeTimes[0].getDate(), month: routeTimes[0].getMonth()+1, year: routeTimes[0].getYear()-100+2000 },
+      async: false,
+      cache: false,
+      timeout: 500,
       dataType : 'json',
       success: function(data)
       {
+        // Check for errors
+        if(data.error)
+        {
+          alert(data.errormsg);
+          return;
+        }
+
         var colTime=0;
         var colWindDir=5;
         var colWindMag=6;
@@ -376,6 +353,8 @@ function putRealWindMarkers(stepDist, stationid)
         }
 
         putWindMarkerEveryKmRoute(0.2);
+
+        callback.call(this, true);
       },
       error: function(data){ alert("Error"); }
   });
@@ -386,22 +365,16 @@ function putWindMarkerEveryKmRoute(stepDist)
     var i,j;
     var pointArrIa = new Array();
     var pointArrJa = new Array();
-    var pointArr = new Array();
-
-    for(i = 0; i < route.length; i++)
-    {
-        pointArr.push(new LatLon(route[i].Ja, route[i].Ka));
-    }
 
     var ovrDist = 0;
     var markerCnt = 0;
-    for(i = 1; i < pointArr.length; i++)
+    for(i = 1; i < route.length; i++)
     {
-      var ppDist = parseFloat(pointArr[i].distanceTo(pointArr[i-1]));
-      var ppBearing = pointArr[i].bearingTo(pointArr[i-1]);
+      var ppDist = parseFloat(route[i].distanceTo(route[i-1]));
+      var ppBearing = route[i].bearingTo(route[i-1]);
       if(ovrDist + ppDist >= stepDist)
       {
-        var lastPos = pointArr[i-1];
+        var lastPos = route[i-1];
         do
         {
           var markerPos = lastPos.destinationPoint(ppBearing, -Math.abs(stepDist-ovrDist));
