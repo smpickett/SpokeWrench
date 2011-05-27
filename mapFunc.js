@@ -154,6 +154,7 @@ function drawStationMarker(loc)
 //              and generate a route overlay
 // Arguments:   file - the file name/location
 //----------------------------------------------------------------------
+var chosenIndex = 0;
 function plotRoute(file)
 {
   $.ajax({
@@ -177,13 +178,75 @@ function plotRoute(file)
             }
             while(!success && i<stationlist.length)
             drawStationMarker(new LatLon(stationlist[i-1].lat, stationlist[i-1].lon));
+            chosenIndex = i-1;
+            
+            
+            addStationsToHtml();
           });
       },
     error: function(xmlResp, message, error)
       {
-        //alert("ERROR (plotRoute):\n" + message + "   " + error);
+        alert("ERROR (plotRoute):\n" + message + "   " + error);
       }
     });
+}
+
+function addStationsToHtml()
+{
+  var select = document.getElementById('weatherStations');
+  $(select).unbind('onChange');
+  while (select.options.length != 0) {
+        select.options.remove(select.options.length - 1);
+    }
+
+  for (var i = 0; i < stationList.length; i++)
+  {
+    var newOption = document.createElement('option');
+    newOption.text = stationList[i].id + " (" + stationList[i].distance + "km)";
+    newOption.value = stationList[i].id;
+    select.add(newOption, null);
+  }
+  select.selectedIndex = chosenIndex;
+
+  $(select).change(function(){changeStation();});
+
+}
+
+function changeStation()
+{
+  clearOverlays();
+
+  // Draw the new route using a google maps polylin object
+  var routeGM = new Array();
+  var bounds = new google.maps.LatLngBounds();  // Initialize a new google maps boundry (for use later)
+  for(i in route)
+  {
+    var pointGM = new google.maps.LatLng(route[i].lat(), route[i].lon());
+    routeGM.push(pointGM);
+    bounds.extend(pointGM);
+  }
+
+  var flightPath = new google.maps.Polyline({
+    path: routeGM,
+    strokeColor: colourPolyLineRoute,
+    strokeOpacity: 0.8,
+    strokeWeight: 3
+  });
+  flightPath.setMap(map);
+  markers.push(flightPath);
+
+  var select = document.getElementById('weatherStations');
+  var stationId = select.value
+  var stationIndex = 0;
+  for(var i = 0; i < stationList.length; i++)
+    if(stationId == stationList[i].id)
+      stationIndex = i;
+
+
+              // Try to get wind data
+              putRealWindMarkers(0.2, stationList[stationIndex].id, function(value){ /*do nothing*/});
+            drawStationMarker(new LatLon(stationList[stationIndex].lat, stationList[stationIndex].lon));
+  
 }
 
 //----------------------------------------------------------------------
@@ -349,12 +412,21 @@ function putRealWindMarkers(stepDist, stationid, callback)
         var colWindMag=6;
         for(var i=0; i<data.wudata.length; i++)
         {
-          windData.push(new Array(CSVTimeStampToDate(data.wudata[i][colTime]), parseInt(data.wudata[i][colWindDir]), parseInt(data.wudata[i][colWindMag])));
+          windData.push(new Array(CSVTimeStampToDate(data.wudata[i][colTime]), parseInt(data.wudata[i][colWindDir])+180, parseInt(data.wudata[i][colWindMag])));
         }
 
-        putWindMarkerEveryKmRoute(0.2);
+        if(windData.length != 0)
+        {
+          putWindMarkerEveryKmRoute(0.2);
+          callback.call(this, true);
+        }
+        else
+        {
+          callback.call(this, false);
+        }
+        
 
-        callback.call(this, true);
+        
       },
       error: function(data){ alert("Error"); }
   });
@@ -383,13 +455,19 @@ function putWindMarkerEveryKmRoute(stepDist)
 
           // Find the nearest weather timestamp, and get the direction (in degrees)
           var windIndex = findNearestTime(routeTimes[i].getTime(), windData);
-          var windDir = windData[windIndex][1];
-          var windMag = windData[windIndex][2];
+          if(windIndex != -1)
+          {
+            var windDir = windData[windIndex][1];
+            var windMag = windData[windIndex][2];
 
-          // Draw a wind arrow with coordinates of 'markerPos' and
-          // wind direction of 'windDir'
-          drawArrow_Wind(markerPos, windDir, windMag);
-
+            // Draw a wind arrow with coordinates of 'markerPos' and
+            // wind direction of 'windDir'
+            drawArrow_Wind(markerPos, windDir, windMag);
+          }
+          else
+          {
+            // error
+          }
           ppDist = ppDist - (stepDist - ovrDist);
           lastPos = markerPos;
           ovrDist = 0;
