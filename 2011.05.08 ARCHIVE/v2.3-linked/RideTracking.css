@@ -1,0 +1,107 @@
+table.tabledata
+{
+  /*border: 1px solid #000000;*/
+  border-collapse: collapse;
+  font-family: "Verdana", sans-serif;
+  font-size:12px;
+}
+table.tabledata td, tr
+{
+  /*border: 1px solid #000000;*/
+  border-bottom: 1px solid gray;
+  border-left: 1px dashed #D0D0D0;
+  border-right: 1px dashed #D0D0D0;
+  padding: 3px;
+  padding-left: 10px;
+  padding-right: 10px;
+  text-align:center;
+  overflow:hidden;
+}
+table.tabledata tr.alt
+{
+  background-color:#F8FFFF;
+}
+table.tabledata th
+{
+  border-bottom: 2px solid black;
+  padding:3px;
+  padding-left: 10px;
+  text-align:center;
+  font-style: bold;
+  font-family: "UnDotum", sans-serif;
+  font-size:14px;
+  /*background: -o-linear-gradient(#5FD2B5, #006C51);*/ /*Opera*/
+  background-color:#005864;
+  color:#FFFFFF;
+}
+table.tabledata th.devices
+{
+  border-bottom:1px solid #909090;
+  border-left:1px solid #909090;
+}
+table.tabledata th.OLD
+{
+  border: 1px solid #000000;
+  padding: 3px;
+  text-align:center;
+  background: -o-linear-gradient(#009E8E, #002824); /*Opera*/
+  background: -moz-linear-gradient( top, rgba(0,158,142,1), rgba(0,0,0,1) ); /*Firefox*/
+  background: -webkit-gradient( linear, left top, left bottom, color-stop( 0, rgba(0,158,142,1) ), color-stop( 1, rgba(0,0,0,1) ) );    /*Chrome/Safari*/
+  filter: progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr=#FF009E8E,EndColorStr=#FF000000); /* IE5.5 - IE7 */
+  -ms-filter: "progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr=#FF009E8E,EndColorStr=#FF000000)"; /* IE8 */
+  color:#FFFFFF;
+}
+table.tabledata .selected
+{
+  background-color:#C0C0C0 !important; 
+}
+table.tabledata .hidden
+{
+  display:none;
+}
+table.tabledata .dataSeperation
+{
+  border-left:1px solid #D0D0D0;
+}
+table.tabledata .dataSeperationHeader
+{
+  border-left:1px solid #909090;
+}
+
+table.tableadd
+{
+  border: 1px solid #000000;
+  font-family: "Verdana", sans-serif;
+  font-size:12px;
+  border-collapse:separate;
+  border-spacing:0px;
+}
+table.tableadd td, th, tr
+{
+  border-top: 1px solid #000000;
+  border-bottom: none; 
+  border-left: none;
+  border-right: none;
+  padding: 3px;
+  text-align:left;
+}
+table.tableadd tr.DataHrMonitor td:first-child, tr.EquipBike td:first-child, tr.DataSpeedometer td:first-child
+{
+  padding-left: 30px;
+  border: none;
+}
+
+
+/* TABLE - Icons                        */
+/* Used to display the editing icons    */
+table.icons td, tr, th
+{
+  border:none;
+  border-collapse:collapse;
+  border-spacing:0px;
+  margin:0px;
+}
+table.icons td
+{
+  width: 20px;
+}
