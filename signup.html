@@ -1,0 +1,40 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Bike Beta - Signup</title>
+
+<!-- External Resources -->
+<script type="text/javascript" src="/resources/jQueryUI/js/jquery-1.5.1.min.js"></script>
+
+<!-- Internal Resources -->
+<script type="text/javascript" src="/JS/user.js"></script>
+<link type="text/css" rel="Stylesheet" href="/CSS/login.css" />
+
+</head>
+
+<body onLoad="User.SignUp.focus();">
+  <div id="page-background">
+    <img id="backgroundImage" src="/IMG/backgroundLogIn.jpg" width="100%" height="100%">
+  </div>
+
+  <div id="contentSignup">
+    <form onSubmit="User.SignUp.signup(); return false;">
+      <table>
+        <tbody>
+          <tr><td>user</td><td><input id="user" type="text" size="18" onBlur="User.SignUp.checkuser();" /></td></tr>
+          <tr><td></td><td id="user_info" class="hidden userinfo"></td></tr>
+          <tr><td>password</td><td><input id="pass1" type="password" size="18" onBlur="User.SignUp.checkpass();" /></td></tr>
+          <tr><td></td><td id="pass1_info" class="hidden userinfo"></td></tr>
+          <tr><td>password (re-enter)</td><td><input id="pass2" type="password" size="18"  onBlur="User.SignUp.checkpass();" /></td></tr>
+          <tr><td></td><td id="pass2_info" class="hidden userinfo"></td></tr>
+          <tr><td>email</td><td><input id="email" type="text" size="18"  onBlur="User.SignUp.checkemail();" /></td></tr>            
+          <tr><td></td><td id="email_info" class="hidden userinfo"></td></tr>
+        </tbody>
+      </table>
+      <div><input id="signup" type="submit" value="signup" /></div>
+      <div id="userinfo" class="hidden userinfo"></div>
+    </form>
+  </div>
+
+</body>
+</html>
