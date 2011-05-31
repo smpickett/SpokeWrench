@@ -21,7 +21,7 @@
     <form onSubmit="User.SignUp.signup(); return false;">
       <table>
         <tbody>
-          <tr><td>user</td><td><input id="user" type="text" size="18" onBlur="User.SignUp.checkuser();" /></td></tr>
+          <tr><td>user</td><td><input id="user" type="text" size="18" onBlur="User.SignUp.checkuser(false);" /></td></tr>
           <tr><td></td><td id="user_info" class="hidden userinfo"></td></tr>
           <tr><td>password</td><td><input id="pass1" type="password" size="18" onBlur="User.SignUp.checkpass();" /></td></tr>
           <tr><td></td><td id="pass1_info" class="hidden userinfo"></td></tr>
