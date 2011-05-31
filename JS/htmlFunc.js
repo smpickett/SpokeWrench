@@ -1,0 +1,360 @@
+/*======================================================*/
+/* FILE: htmlFunc.js                                    */
+/* Copyright (c) 2011 SpokeWrench                       */
+/*======================================================*/
+
+  var selected_rows = new Array()
+
+
+  $(document).ready(function(){
+      dataTable_PerformShading();
+      $('table.tabledata tr').click(function(event){RowSelection_Toggle($(this), event);});
+  });
+
+  function RowSelection_Clear()
+  {
+    $('#tableDataMain tr').removeClass("table.tabledata selected");
+    selected_rows.length = 0;
+    $('#EditSelectedRide').unbind('mouseenter mouseleave click');
+    $('#EditSelectedRide').animate({opacity: 0.2}, 250);
+    $('#CopySelectedRide').unbind('mouseenter mouseleave click');
+    $('#CopySelectedRide').animate({opacity: 0.2}, 250);
+    $('#DeleteSelectedRide').unbind('mouseenter mouseleave click');
+    $('#DeleteSelectedRide').animate({opacity: 0.2}, 250);
+  }  
+
+  function RowSelection_Toggle(row, event)
+  {
+    if($(row).attr('id') == 'rowHeader')
+      return;
+
+    if(!event.ctrlKey)
+    {
+      $('#tableDataMain tr').removeClass("table.tabledata selected");
+      selected_rows.length = 0;
+    }
+
+    if($(row).hasClass("table.tabledata selected"))
+    {
+      $(row).removeClass("table.tabledata selected");
+      for (i = 0; i < selected_rows.length; i++)
+        if(selected_rows[i] == row[0].rowIndex)
+          selected_rows.splice(i, 1);
+    }
+    else
+    {
+      $(row).addClass("table.tabledata selected");
+      selected_rows.push(parseInt(row[0].rowIndex));
+    }
+
+    if(selected_rows.length == 0)
+    {
+      $('#EditSelectedRide').unbind('mouseenter mouseleave click');
+      $('#EditSelectedRide').animate({opacity: 0.2}, 250);
+      $('#CopySelectedRide').unbind('mouseenter mouseleave click');
+      $('#CopySelectedRide').animate({opacity: 0.2}, 250);
+      $('#DeleteSelectedRide').unbind('mouseenter mouseleave click');
+      $('#DeleteSelectedRide').animate({opacity: 0.2}, 250);
+    }
+    else if (selected_rows.length == 1)
+    {
+      $('#EditSelectedRide').unbind('mouseenter mouseleave click');
+      $('#CopySelectedRide').unbind('mouseenter mouseleave click');
+      $('#DeleteSelectedRide').unbind('mouseenter mouseleave click');
+      $('#EditSelectedRide').hover(function(){$(this).css('cursor', 'pointer');}, function(){$(this).css('cursor', 'auto');});
+      $('#EditSelectedRide').click(function(){EditSelectedRide()});
+      $('#EditSelectedRide').animate({opacity: 1.0}, 250);
+      $('#CopySelectedRide').hover(function(){$(this).css('cursor', 'pointer');}, function(){$(this).css('cursor', 'auto');});
+      $('#CopySelectedRide').click(function(){CopyRows()});
+      $('#CopySelectedRide').animate({opacity: 1.0}, 250);
+      $('#DeleteSelectedRide').hover(function(){$(this).css('cursor', 'pointer');}, function(){$(this).css('cursor', 'auto');});
+      $('#DeleteSelectedRide').click(function(){DeleteRows()});
+      $('#DeleteSelectedRide').animate({opacity: 1.0}, 250);
+    }
+    else
+    {
+      $('#EditSelectedRide').unbind('mouseenter mouseleave click');
+      $('#EditSelectedRide').animate({opacity: 0.2}, 250);
+    }
+
+    /* And show the google maps route */
+    var route_file = document.getElementById('tableDataMain').rows[row[0].rowIndex].cells[13].innerText;
+    if(route_file != "")
+    {
+      // Remove existing routes and information before plotting the new route
+      clearOverlays();
+      plotRoute('./Routes/'+route_file);
+    }
+
+  }
+
+
+  var EditSelectedRideId = 0;
+  function EditSelectedRide()
+  {
+    if(selected_rows.length == 0)
+      alert("Please select ride to edit");
+    else
+    {
+      var row = selected_rows[0];
+      EditSelectedRideId = RideIdentityFromRow(row);
+
+      // Update the 'Edit' table
+      $('input#date').val(document.getElementById('tableDataMain').rows[row].cells[2].innerHTML);
+      $('input#time').val(document.getElementById('tableDataMain').rows[row].cells[3].innerHTML);
+      $('input#route').val(document.getElementById('tableDataMain').rows[row].cells[4].innerText);
+      $('select#type').val(document.getElementById('tableDataMain').rows[row].cells[5].innerHTML);
+      $('input#SPD_time').val(document.getElementById('tableDataMain').rows[row].cells[6].innerHTML);
+      $('input#SPD_dist').val(document.getElementById('tableDataMain').rows[row].cells[7].innerHTML);
+      $('input#SPD_avecad').val(document.getElementById('tableDataMain').rows[row].cells[8].innerHTML);
+      $('input#HRM_time').val(document.getElementById('tableDataMain').rows[row].cells[9].innerHTML);
+      $('input#HRM_cals').val(document.getElementById('tableDataMain').rows[row].cells[10].innerHTML);
+      $('input#HRM_avehr').val(document.getElementById('tableDataMain').rows[row].cells[11].innerHTML);
+      $('input#HRM_maxhr').val(document.getElementById('tableDataMain').rows[row].cells[12].innerHTML);
+
+      // Reset the route file selection
+      $("select#route_file").val(0);
+      // Try and match the route file selection
+      $("select#route_file option").filter(function() {
+        return this.value == document.getElementById('tableDataMain').rows[row].cells[13].innerText;
+        }).attr('selected', 'selected');
+
+      // Edit the table information to reflect an 'Edit' instead of an 'Add'
+      $('input#AddEditRideButton').val('Save');
+      $('input#AddEditRideButton').removeAttr('onClick');
+      $('input#AddEditRideButton').unbind('click');
+      $('input#AddEditRideButton').bind('click', function(){Submit_EditRide(EditSelectedRideId);});
+      $('th#AddEditRideTitle').text("Edit Ride");
+    }
+    return false;
+  }
+
+  function AddEditCancel()
+  {
+    $('input#AddEditRideButton').val('Add');
+    $('input#AddEditRideButton').removeAttr('onClick');
+    $('input#AddEditRideButton').unbind('click');
+    $('input#AddEditRideButton').bind('click', function(){Submit_AddRide();});
+    $('th#AddEditRideTitle').text("Add Ride");    
+  }
+
+
+
+
+  function DeleteRows()
+  { 
+    if(selected_rows.length == 0)
+      alert("Please select ride(s) to delete");
+    else
+    {
+      $yes = confirm("Are you sure you want to delete the selected rides?");
+
+      if($yes)
+      {
+        selected_rows.sort(sortNumber);
+        do
+        {
+          var row = selected_rows.pop();
+          /* Call the PHP Delete function */
+          $.ajax({
+                type:'POST',
+                url: 'DeleteRide.php',
+                data: 'id='+RideIdentityFromRow(row)
+  //              success: function(data){ alert("OK"); },
+ //               error: function(data){ alert("Error"); },
+//                complete: function(data){ alert("Done"); }
+                });
+          
+          /* Hide, remove from row selection  */
+          HideSelectedRow(row);
+        }
+        while (selected_rows.length != 0)
+
+        RowSelection_Clear();
+        dataTable_PerformShading();
+      }
+    }
+    
+    return false;
+  }
+
+  function CopyRows()
+  {
+    if(selected_rows.length == 0)
+      alert("Please select ride(s) to copy");
+    else
+    {
+      selected_rows.sort(sortNumber);
+      do
+      {
+        var row = selected_rows.pop();
+          $.ajax({
+                type:'POST',
+                url: 'CopyRide.php',
+                data: { id: RideIdentityFromRow(row), row: row },
+                dataType : 'json',
+                success: function(data)
+                {
+                  var oldRow = document.getElementById('tableDataMain').rows[data.row];
+                  var blankRow = document.getElementById('tableDataMain').insertRow(parseInt(data.row)+1);
+                  var newRow = oldRow.cloneNode(true);
+                  document.getElementById('tableDataMain').children[1].replaceChild(newRow, blankRow);
+
+
+                  var newRowChildren = $(newRow).children("td");
+                  for(var i=0; i<newRowChildren.length; i++)
+                    newRowChildren[i].style.display = 'none';
+
+                  newRow.cells(0).innerHTML = data.dataID;
+                  ShowHideTableRow(newRow, true, function(){dataTable_PerformShading();});
+                  newRow.onclick = function(event){RowSelection_Toggle($(this), event)};
+
+//                  $(newRow).removeClass("table.tabledata selected");
+//                  $(oldRow).removeClass("table.tabledata selected");
+                }
+//                error: function(data){ alert("Error"); },
+//                complete: function(jqXHR, textStatus)
+//                  {
+//                    alert("Complete:"+textStatus);
+//                  }
+          });
+      }
+      while (selected_rows.length != 0)
+
+      RowSelection_Clear();
+    }
+    return false;
+  }
+
+  function RefreshTable()
+  {
+    if (window.XMLHttpRequest)
+      {// code for IE7+, Firefox, Chrome, Opera, Safari
+      xmlhttp=new XMLHttpRequest();
+      }
+    else
+      {// code for IE6, IE5
+      xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+      }
+    xmlhttp.onreadystatechange=function()
+    {
+      if (xmlhttp.readyState==4 && xmlhttp.status==200)
+      {
+        RowSelection_Clear();
+
+        // Remove the old table
+        var child = document.getElementById("tableDataMain");
+        if(child != null)
+          child.parentNode.removeChild(child);
+
+        // Create a new table and tie it to a variable
+        var newcontent = document.createElement('div');
+        newcontent.innerHTML = xmlhttp.responseText;
+
+        // Add the new table to the HTML page
+        document.getElementById("div_tableData").appendChild(newcontent);
+        $('table.tabledata tr').click(function(event) {RowSelection_Toggle($(this), event);});
+        dataTable_PerformShading();
+      }
+    }
+    xmlhttp.open("GET","DrawTable.php",true);
+    xmlhttp.send();
+  
+    return false;
+  }
+
+  function HideSelectedRow(rowNum)
+  {
+    ShowHideTableRow(document.getElementById('tableDataMain').rows[rowNum], false, function(){dataTable_DeleteRow(rowNum);});
+  }
+
+  function RideIdentityFromRow(rowNum)
+  {
+    return document.getElementById('tableDataMain').rows[rowNum].cells[0].innerHTML;
+  }
+
+  function sortNumber(a,b)
+  {
+    return a - b;
+  }
+
+  function dataTable_PerformShading()
+  {
+    $('#tableDataMain tr:even').addClass('alt');
+    $('#tableDataMain tr:odd').removeClass('alt');
+  }
+
+  function dataTable_DeleteRow(rowNum)
+  {
+    document.getElementById('tableDataMain').deleteRow(rowNum);
+    dataTable_PerformShading();
+  }
+
+  function sortColumns(a, b)
+  {
+    return a.cellIndex - b.cellIndex
+  }
+
+
+function ShowHideTableRow(rowSelector, show, callback)
+{
+    var childCellsSelector = $(rowSelector).children("td");
+    var ubound = childCellsSelector.length - 1;
+    var lastCallback = null;
+
+    //childCellsSelector.sort(sortColumns); /* for some reason this is screwing up the callback... */ /* also, didnt fix the issue */
+    childCellsSelector.each(function(i)
+    {
+        // Only execute the callback on the last element.
+        if (ubound == i)
+          lastCallback = callback;
+
+        if(show && !$(this).hasClass('hidden'))
+          $(this).fadeIn(500, lastCallback);
+        else if(!show)
+        $(this).fadeOut(500, lastCallback);
+    });
+}
+
+
+
+    function Submit_EditRide(rideId)
+    {
+      $('input#AddEditRideButton').val('Add');
+      $('input#AddEditRideButton').unbind('click');
+      $('input#AddEditRideButton').bind('click', function(){Submit_AddRide();});
+      $('th#AddEditRideTitle').text("Add Ride");
+    }
+
+    function Submit_AddRide()
+    {
+      if($('input#date').val() == "")
+      {
+        alert("Please enter a date");
+        return false;
+      }
+
+      $.ajax({
+        type: "POST",
+        dataType : 'json',
+        url: "AddRide.php",
+        data: {
+                date: $('input#date').val(),
+                time: $('input#time').val(),
+                route: $('input#route').val(),
+                route_file: $('select#route_file').val(),
+                category: $('select#type').val(),
+                DataSpeedometer_cadence: $('input#SPD_avecad').val(),
+                DataSpeedometer_time: $('input#SPD_time').val(),
+                DataSpeedometer_dist: $('input#SPD_dist').val(),
+                DataHrMonitor_avehr: $('input#HRM_avehr').val(),
+                DataHrMonitor_maxhr: $('input#HRM_maxhr').val(),
+                DataHrMonitor_time: $('input#HRM_time').val(),
+                DataHrMonitor_calories: $('input#HRM_cals').val(),
+              },
+        success: function(data){RefreshTable();/*alert(data.msg);*/},
+        error: function(data){alert(data.responseText);}
+        });
+
+      return false;
+    }
