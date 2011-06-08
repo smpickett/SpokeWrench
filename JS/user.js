@@ -61,15 +61,47 @@ User.LogIn.login = function()
     $.ajax({
       type:'POST',
       url:loginscript,
-      data: { func: 'Login', user: username, pass: User.Security.sha1Hash(pass) },
+      data: { func: 'GetChallenge' },
       dataType:'json',
-      success: User.LogIn.redirect,
+      success: User.LogIn.login2,
       error: User.servererror
     });
 
     return false;
   }
 };
+
+User.LogIn.login2 = function(data)
+{
+  var username = $('input#user').val();
+  var pass = $('input#pass').val();
+
+  // Check to make sure that the server actually returned something
+  if(data == undefined || data.error == undefined)
+  {
+    $('div#user_info').text("server error");
+    return;
+  }
+
+  // Check to make sure that the sever didn't encounter an error
+  if(data.error)
+  {
+    // Report the error message to the user
+    $('div#user_info').text(data.errormsguser);
+    return;
+  }
+
+  // Call the PHP login script
+  // (Note: password is sent hashed)
+  $.ajax({
+    type:'POST',
+    url:loginscript,
+    data: { func: 'Login', user: username, pass: User.Security.sha1Hash(User.Security.sha1Hash(pass)+data.challenge) },
+    dataType:'json',
+    success: User.LogIn.redirect,
+    error: User.servererror
+  });
+}
 
 User.LogIn.redirect = function(cred)
 {
@@ -129,7 +161,6 @@ User.SignUp.checkuser = function(wait)
     url:loginscript,
     async:!wait,
     cache:false,
-    timeout:500,
     data: { func: 'CheckUsername', user: username }, 
     dataType:'json',
     success: function(data)
@@ -280,7 +311,7 @@ User.SignUp.signup = function()
     
   // Client side checks out, proceed with signup reqest
   var user = $('input#user').val();
-  var pass = $('input#pass').val();
+  var pass = $('input#pass1').val();
   var email = $('input#email').val();
 
   // Inform the user that the signup process has started
